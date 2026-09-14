@@ -257,6 +257,18 @@ export interface StoreImageResult {
 }
 
 /**
+ * 图片写入的统一入口回调。
+ *
+ * 上游所有图片落库都经过 `storeImageWithSize`，所以备份只需挂在这里一处，
+ * 而不是逐个调用点挂钩。
+ */
+let imageStoredHook: ((image: StoredImage) => void) | null = null
+
+export function setImageStoredHook(hook: ((image: StoredImage) => void) | null) {
+  imageStoredHook = hook
+}
+
+/**
  * 存储图片，若已存在（按 hash 去重）则跳过。
  * 返回 image id 及图片真实宽高。
  */
@@ -269,14 +281,15 @@ export async function storeImageWithSize(dataUrl: string, source: NonNullable<St
   const existing = await getImage(id)
   if (!existing) {
     const thumbnail = await safeCreateImageThumbnail(dataUrl)
-    await putImage({
+    const image: StoredImage = {
       id,
       dataUrl,
       createdAt: Date.now(),
       source,
       width: thumbnail.width,
       height: thumbnail.height,
-    })
+    }
+    await putImage(image)
     if (thumbnail.thumbnailDataUrl) {
       await putImageThumbnail({
         id,
@@ -286,6 +299,7 @@ export async function storeImageWithSize(dataUrl: string, source: NonNullable<St
         thumbnailVersion: THUMBNAIL_VERSION,
       })
     }
+    imageStoredHook?.(image)
     return { id, width: thumbnail.width, height: thumbnail.height }
   }
 

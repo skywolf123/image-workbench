@@ -7,8 +7,10 @@ import 'katex/dist/katex.min.css'
 import './index.css'
 import { installMobileViewportGuards } from './lib/viewport'
 import { requestPersistentStorage } from './lib/storagePersistence'
+import { initBackup } from './lib/backupBridge'
 
 installMobileViewportGuards()
+initBackup()
 
 if (import.meta.env.PROD) {
   void requestPersistentStorage()
