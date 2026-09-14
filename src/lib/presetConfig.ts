@@ -158,13 +158,23 @@ export function enforcePresetConfigPolicy(
   const agentImageProfileId = presetConfigOnly && (!settings.agentImageProfileId || !profileIds.has(settings.agentImageProfileId))
     ? defaultPresetProfileId ?? presetProfiles[0]?.id ?? null
     : settings.agentImageProfileId
+  // 深度防御：平台模式下 Key 只应存在于服务端进程，预置配置里即便被人为塞入也会在这里被清空。
+  const nextProfiles = stripDeploymentApiKeys(profiles)
+  const active = nextProfiles.find((profile) => profile.id === activeProfileId)
 
   return {
     ...settings,
+    // 顶层字段是旧版单配置的兼容层，实际请求以 active profile 为准，两者必须一起清。
+    apiKey: active ? active.apiKey : settings.apiKey,
     customProviders,
-    profiles,
+    profiles: nextProfiles,
     activeProfileId,
     agentTextProfileId,
     agentImageProfileId,
   }
+}
+
+function stripDeploymentApiKeys(profiles: ApiProfile[]) {
+  if (!PLATFORM_MODE) return profiles
+  return profiles.map((profile) => (profile.apiKey ? { ...profile, apiKey: '' } : profile))
 }
