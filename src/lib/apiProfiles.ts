@@ -17,7 +17,7 @@ import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_STREAM_PARTIAL_IMAGES, DEFAULT_Z
 import { customProviderSupportsNativeTransparentBackground } from './customProviderCapabilities'
 import { shouldUseApiProxy } from './devProxy'
 import { normalizeReasoningEffort, normalizeStreamPartialImages, parseDefaultApiUrl } from './defaultApiUrl'
-import { requiresApiKey } from './presetConfig'
+import { isPlatformMode } from './presetConfig'
 import { readRuntimeEnv } from './runtimeEnv'
 import { isImportableConfigUrl } from './importableConfigUrl'
 import { DEFAULT_IMAGES_MODEL } from './imageModels'
@@ -869,7 +869,7 @@ export function validateApiProfile(profile: ApiProfile): string | null {
   if (!profile.name.trim()) return '缺少名称'
   if (profile.provider !== 'fal' && !profile.baseUrl.trim() && !shouldUseApiProxy(profile.apiProxy)) return '缺少 API URL'
   // 平台模式下 Key 由服务端在代理时注入，前端不需要、也不应该要求它非空。
-  if (requiresApiKey() && !profile.apiKey.trim()) return '缺少 API Key'
+  if (!isPlatformMode() && !profile.apiKey.trim()) return '缺少 API Key'
   if (!profile.model.trim()) return '缺少模型 ID'
   return null
 }

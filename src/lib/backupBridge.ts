@@ -47,8 +47,13 @@ export function initBackup() {
       async getExistingTaskIds() {
         return new Set((await getAllTasks()).map((task) => task.id))
       },
-      async putTask(task) {
-        await putTask(task)
+      async putTasks(tasks) {
+        const state = useStore.getState()
+        const existingIds = new Set(state.tasks.map((task) => task.id))
+        const freshTasks = tasks.filter((task) => !existingIds.has(task.id))
+        for (const task of freshTasks) await putTask(task)
+        // 一次交回全部缺失任务：落库后再合并进内存列表，让恢复结果立刻可见。
+        if (freshTasks.length > 0) useStore.getState().setTasks([...state.tasks, ...freshTasks])
       },
       async applyPayload(payload) {
         // 备份可能来自旧版本，必须走与正常启动相同的归一化流程再写入。
@@ -117,10 +122,4 @@ function watchForBackupableChanges() {
     previousState = state
     if (changed) scheduleSnapshotBackup()
   })
-}
-
-/** 仅供测试重置模块级状态。 */
-export function resetBackupBridgeForTests() {
-  stopWatching?.()
-  stopWatching = null
 }

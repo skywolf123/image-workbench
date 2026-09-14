@@ -1,5 +1,6 @@
 import type { AgentConversation, AppSettings, FavoriteCollection, StoredImage, TaskParams, TaskRecord } from '../types'
-import { createBackupPayload, stripDeploymentConfig, type BackupPayload, type BackupSnapshot } from './backupPayload'
+import { bytesToDataUrl, dataUrlToBytes } from './dataUrl'
+import { createBackupPayload, type BackupPayload, type BackupSnapshot } from './backupPayload'
 import type { BackupConfig } from './backupConfig'
 import { getPersistableAgentConversations } from './agentResponseState'
 import { createTaskErrorPatch } from './taskState'
@@ -32,7 +33,8 @@ export interface RestoreSink {
   getExistingImageIds: () => Promise<Set<string>>
   putImage: (id: string, dataUrl: string) => Promise<void>
   getExistingTaskIds: () => Promise<Set<string>>
-  putTask: (task: TaskRecord) => Promise<void>
+  /** 一次交回全部缺失任务：既落库，也让内存里的任务列表立刻可见。 */
+  putTasks: (tasks: TaskRecord[]) => Promise<void>
   applyPayload: (payload: BackupPayload) => Promise<void>
 }
 
@@ -175,9 +177,9 @@ export function createBackupClient(config: BackupConfig, fetchImpl: typeof fetch
       const response = await request(`/api/backup/images/${encodeURIComponent(id)}`)
       if (response.status === 404) return null
       await expectOk(response, '图片下载失败')
-      // 服务器只存原始字节，data URL 的 MIME 在客户端按文件头还原。
+      // 服务器只存原始字节，data URL 的类型在客户端按文件头还原。
       const bytes = new Uint8Array(await response.arrayBuffer())
-      return bytesToDataUrl(bytes.buffer as ArrayBuffer, sniffImageMimeType(bytes))
+      return bytesToDataUrl(bytes, `image.${sniffImageExtension(bytes)}`)
     },
 
     async uploadImage(id, bytes) {
@@ -216,35 +218,18 @@ export function createBackupClient(config: BackupConfig, fetchImpl: typeof fetch
 
 // ===== 编解码 =====
 
-/** data URL 只解一次 base64；服务器上落盘的就是解码后的原始字节。 */
-export function dataUrlToBytes(dataUrl: string): Uint8Array {
-  const commaIndex = dataUrl.indexOf(',')
-  const payload = commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : dataUrl
-  const binary = atob(payload)
-  const bytes = new Uint8Array(binary.length)
-  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index)
-  return bytes
-}
-
-export function bytesToDataUrl(bytes: ArrayBuffer, mimeType = 'image/png') {
-  const view = new Uint8Array(bytes)
-  let binary = ''
-  for (let index = 0; index < view.length; index++) binary += String.fromCharCode(view[index])
-  return `data:${mimeType};base64,${btoa(binary)}`
-}
-
 /**
- * 从文件头判断图片类型。
+ * 从文件头判断图片格式后缀。
  *
  * 服务器是只存字节的哑巴仓库，不记 MIME（也就不需要为它维护一份旁路元数据），
  * 而 data URL 又必须带上正确的类型才能被浏览器解码，所以在客户端按魔数还原。
  */
-export function sniffImageMimeType(bytes: Uint8Array): string {
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png'
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
-  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image/gif'
-  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return 'image/webp'
-  return 'image/png'
+export function sniffImageExtension(bytes: Uint8Array): string {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png'
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg'
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'gif'
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return 'webp'
+  return 'png'
 }
 
 // ===== 运行时接线 =====
@@ -261,10 +246,6 @@ let snapshotTimer: ReturnType<typeof setTimeout> | null = null
 export function configureBackup(next: BackupConfig, nextClient?: BackupClient) {
   config = next
   client = nextClient ?? (next.serverUrl && next.memberId ? createBackupClient(next) : null)
-}
-
-export function getBackupConfig() {
-  return config
 }
 
 /** 只有开关打开、服务器地址与成员码都填了，备份才真正工作。 */
@@ -336,7 +317,7 @@ async function uploadOneImage(id: string, image?: StoredImage) {
     if (await client!.hasImage(id)) return true
     const source = image?.id === id ? image : await readPendingImage(id)
     if (!source) return false
-    await withRetry(() => client!.uploadImage(id, dataUrlToBytes(source.dataUrl)))
+    await withRetry(() => client!.uploadImage(id, dataUrlToBytes(source.dataUrl).bytes))
     setStatus({ error: null })
     return true
   } catch (error) {
@@ -453,7 +434,7 @@ export async function runRestore(): Promise<RestoreOutcome> {
         .map((task) => task.status === 'running'
           ? { ...task, ...createTaskErrorPatch(task, '请求中断（已从备份恢复）', now), falRecoverable: false, customRecoverable: false }
           : task)
-      for (const task of missingTasks) await sink.putTask(task)
+      await sink.putTasks(missingTasks)
       tasks = missingTasks.length
       setStatus({ message: '正在恢复设置与会话…' })
       // 状态数据走与正常启动相同的归一化流程，避免旧版本备份把应用弄坏。
@@ -491,5 +472,3 @@ export function resetBackupForTests() {
   notify = null
   status = { running: false, total: 0, done: 0, lastSuccessAt: null, error: null, message: null }
 }
-
-export { stripDeploymentConfig }

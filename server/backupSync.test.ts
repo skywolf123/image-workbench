@@ -5,19 +5,19 @@ import { join } from 'node:path'
 import { createPlatformServer } from './index.mjs'
 import {
   bindBackupSources,
-  bytesToDataUrl,
   configureBackup,
   configureBackupTiming,
   createBackupClient,
-  dataUrlToBytes,
   enqueueImageBackup,
   resetBackupForTests,
   runBackupNow,
   runRestore,
   scheduleSnapshotBackup,
   setPendingImageReader,
+  sniffImageExtension,
   type BackupSource,
 } from '../src/lib/backupSync'
+import { bytesToDataUrl, dataUrlToBytes } from '../src/lib/dataUrl'
 import type { BackupConfig } from '../src/lib/backupConfig'
 import type { AppSettings, StoredImage, TaskRecord } from '../src/types'
 import { DEFAULT_SETTINGS, createDefaultOpenAIProfile, normalizeSettings } from '../src/lib/apiProfiles'
@@ -50,8 +50,8 @@ function createMemoryStore() {
     putImage(id: string, dataUrl: string) {
       images.set(id, { id, dataUrl, createdAt: Date.now(), source: 'generated' })
     },
-    putTask(task: TaskRecord) {
-      tasks.set(task.id, task)
+    putTasks(next: TaskRecord[]) {
+      for (const task of next) tasks.set(task.id, task)
     },
   }
 }
@@ -128,7 +128,7 @@ function bindRestore(local: ReturnType<typeof createMemoryStore>, onPayload: (pa
       getExistingImageIds: async () => new Set(local.images.keys()),
       putImage: async (id, dataUrl) => local.putImage(id, dataUrl),
       getExistingTaskIds: async () => new Set(local.tasks.keys()),
-      putTask: async (task) => local.putTask(task),
+      putTasks: async (next) => local.putTasks(next),
       applyPayload: async (payload) => onPayload(payload),
     },
   })
@@ -267,7 +267,7 @@ describe('备份与恢复的完整往返', () => {
 
       const local = createMemoryStore()
       local.putImage('image-a', DATA_URL_B)
-      local.putTask(makeTask({ prompt: '本地较新的提示词' }))
+      local.putTasks([makeTask({ prompt: '本地较新的提示词' })])
       local.putImage('image-local-only', DATA_URL_B)
       bindRestore(local)
 
@@ -413,16 +413,22 @@ describe('自动上传', () => {
 
 describe('编解码', () => {
   it('data URL 与原始字节往返一致', () => {
-    const bytes = dataUrlToBytes(DATA_URL_A)
+    const { bytes } = dataUrlToBytes(DATA_URL_A)
     expect(bytes.length).toBeGreaterThan(0)
-    expect(bytesToDataUrl(bytes.buffer as ArrayBuffer)).toBe(DATA_URL_A)
+    expect(bytesToDataUrl(bytes, 'image.png')).toBe(DATA_URL_A)
   })
 
   it('上传到服务器的是解码后的原始字节而不是 base64 文本', () => {
-    const bytes = dataUrlToBytes(DATA_URL_A)
+    const { bytes } = dataUrlToBytes(DATA_URL_A)
     expect(bytes[0]).toBe(0x89)
     expect(bytes[1]).toBe(0x50)
     expect(new TextDecoder().decode(bytes)).not.toContain('data:image')
+  })
+
+  it('按文件头还原 data URL 的图片类型', () => {
+    expect(sniffImageExtension(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe('png')
+    expect(sniffImageExtension(new Uint8Array([0xff, 0xd8, 0xff]))).toBe('jpeg')
+    expect(sniffImageExtension(new Uint8Array([0x52, 0x49, 0x46, 0x46]))).toBe('webp')
   })
 })
 

@@ -20,20 +20,17 @@ describe('platform mode', () => {
     const { policy } = await loadPolicy()
 
     expect(policy.isPlatformMode()).toBe(false)
-    expect(policy.shouldHideApiKeyField()).toBe(false)
-    expect(policy.requiresApiKey()).toBe(true)
     expect(policy.isPresetConfigOnlyEnabled()).toBe(false)
     expect(policy.isPresetConfigParamsLocked()).toBe(false)
     expect(policy.isPresetConfigDeletionPrevented()).toBe(false)
   })
 
-  it('turns on through the build-time switch and hides the API key field', async () => {
+  it('turns on through the build-time switch', async () => {
     vi.stubEnv('VITE_PLATFORM_MODE', 'true')
     const { policy } = await loadPolicy()
 
     expect(policy.isPlatformMode()).toBe(true)
-    expect(policy.shouldHideApiKeyField()).toBe(true)
-    expect(policy.requiresApiKey()).toBe(false)
+    expect(policy.isPresetConfigOnlyEnabled()).toBe(true)
   })
 
   it('drives the strongest lock level instead of competing with the upstream switches', async () => {

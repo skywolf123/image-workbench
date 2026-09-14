@@ -38,10 +38,10 @@ import {
   isPresetProviderDeletionPrevented,
   isPresetProfileLocked,
   isPresetProviderLocked,
-  requiresApiKey,
-  shouldHideApiKeyField,
+  isPlatformMode,
 } from '../lib/presetConfig'
 import { copyTextToClipboard, getClipboardFailureMessage } from '../lib/clipboard'
+import { COPY_IMPORT_URL_OPTIONS_KEY } from '../lib/storageNamespace'
 import { createCustomProfileImportUrl } from '../lib/profileImportUrl'
 import { requestBrowserNotificationPermission, type BrowserNotificationPermissionResult } from '../lib/browserNotification'
 import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_STREAM_PARTIAL_IMAGES, REASONING_EFFORT_VALUES, type AgentApiConfigMode, type ApiProfile, type AppSettings, type CustomProviderDefinition, type ReasoningEffort, type ZipDownloadRoute } from '../types'
@@ -70,7 +70,7 @@ function newId(prefix: string) {
 }
 
 const ADD_CUSTOM_PROVIDER_VALUE = '__add_custom_provider__'
-const COPY_IMPORT_URL_OPTIONS_STORAGE_KEY = 'image-workbench.copy-import-url-options'
+const COPY_IMPORT_URL_OPTIONS_STORAGE_KEY = COPY_IMPORT_URL_OPTIONS_KEY
 
 const DEFAULT_COPY_IMPORT_URL_OPTIONS = {
   useNewApiAddress: false,
@@ -225,8 +225,10 @@ export default function SettingsModal() {
   const apiProxyAvailable = isApiProxyAvailable(apiProxyConfig)
   const apiProxyLocked = isApiProxyLocked(apiProxyConfig)
   const presetConfigOnly = isPresetConfigOnlyEnabled()
-  const hideApiKeyField = shouldHideApiKeyField()
-  const requireApiKey = requiresApiKey()
+  // 平台模式只经这一个出口影响界面形态：Key 由服务端注入，所以字段不渲染、校验也不要求它非空。
+  const platformMode = isPlatformMode()
+  const hideApiKeyField = platformMode
+  const requireApiKey = !platformMode
   const presetDeletionPrevented = isPresetConfigDeletionPrevented()
   const presetProfileIds = getPresetProfileIds()
   const visibleProfiles = presetConfigOnly

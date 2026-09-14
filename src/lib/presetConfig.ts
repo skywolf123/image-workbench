@@ -23,16 +23,6 @@ export function isPlatformMode() {
   return PLATFORM_MODE
 }
 
-/** 平台模式下 API 配置由管理员统一管理，API Key 输入区块整块不渲染。 */
-export function shouldHideApiKeyField() {
-  return PLATFORM_MODE
-}
-
-/** 平台模式下 Key 由服务端在代理时注入，前端不再要求它非空。 */
-export function requiresApiKey() {
-  return !PLATFORM_MODE
-}
-
 let presetProfiles: ApiProfile[] = []
 let presetProviders: CustomProviderDefinition[] = []
 let presetProfileFields: Record<string, string[]> | undefined

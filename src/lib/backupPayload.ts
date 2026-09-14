@@ -21,19 +21,16 @@ export interface BackupSnapshot {
   payload: BackupPayload
 }
 
-const DEPLOYMENT_PROFILE_FIELDS = ['baseUrl', 'apiKey', 'model', 'codexCli'] as const
-
 function stripDeploymentProfile(profile: ApiProfile): ApiProfile {
   const stripped: ApiProfile = { ...profile, baseUrl: '', apiKey: '', model: '', codexCli: false }
-  if (profile.providerDrafts) {
-    const drafts = { ...profile.providerDrafts }
-    for (const [provider, draft] of Object.entries(drafts)) {
-      drafts[provider as keyof typeof drafts] = draft
-        ? { ...draft, baseUrl: undefined, model: undefined, codexCli: undefined }
-        : draft
-    }
-    stripped.providerDrafts = drafts
+  if (!profile.providerDrafts) return stripped
+
+  const drafts = { ...profile.providerDrafts }
+  for (const provider of Object.keys(drafts) as Array<keyof typeof drafts>) {
+    const draft = drafts[provider]
+    if (draft) drafts[provider] = { ...draft, baseUrl: undefined, model: undefined, codexCli: undefined }
   }
+  stripped.providerDrafts = drafts
   return stripped
 }
 
@@ -60,5 +57,3 @@ export function createBackupPayload(
 ): BackupPayload {
   return { ...source, settings: stripDeploymentConfig(settings) }
 }
-
-export { DEPLOYMENT_PROFILE_FIELDS }

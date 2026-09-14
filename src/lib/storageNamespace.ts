@@ -14,4 +14,4 @@ export const LEGACY_STORAGE_NAME = 'gpt-image-playground'
 export const LEGACY_MIGRATION_FLAG_KEY = `${STORAGE_NAME}.legacy-storage-migrated`
 
 /** 除主存储键外，本应用在 localStorage 里使用的其他键。 */
-export const COPY_IMPORT_URL_OPTIONS_STORAGE_KEY = `${STORAGE_NAME}.copy-import-url-options`
+export const COPY_IMPORT_URL_OPTIONS_KEY = `${STORAGE_NAME}.copy-import-url-options`

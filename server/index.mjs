@@ -263,8 +263,12 @@ function handleStatic(req, res, config) {
 
 function buildUpstreamTarget(apiUrl, reqUrl) {
   const rest = reqUrl.slice(PROXY_PREFIX.length + 1)
-  if (!rest) return null
-  return new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`)
+  if (!rest) return { error: 'API 代理路径不能为空' }
+  try {
+    return { target: new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`) }
+  } catch {
+    return { error: `平台未配置可用的上游地址，无法代理请求。请设置 PLATFORM_API_URL 后重启服务端。（当前值：${apiUrl || '空'}）` }
+  }
 }
 
 function filterRequestHeaders(headers, target, apiKey, remoteAddress) {
@@ -297,9 +301,9 @@ function handleProxy(req, res, config) {
     return
   }
 
-  const target = buildUpstreamTarget(config.apiUrl, req.url)
-  if (!target) {
-    sendError(res, 403, 'API 代理路径不能为空', 'proxy_path_required')
+  const { target, error } = buildUpstreamTarget(config.apiUrl, req.url)
+  if (error) {
+    sendError(res, 503, error, 'platform_upstream_missing')
     return
   }
   if (!config.apiKey) {
@@ -524,10 +528,9 @@ if (isDirectRun) {
   createPlatformServer()
     .then(async (instance) => {
       await instance.listen()
-      const { host, port, apiUrl, dataDir } = instance.config
-      console.log(`平台服务已启动：http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`)
-      console.log(`上游地址：${apiUrl || '（未配置，代理请求会被拒绝）'}`)
-      console.log(`备份数据目录：${dataDir}`)
+      console.log(`平台服务已启动：http://${instance.config.host === '0.0.0.0' ? 'localhost' : instance.config.host}:${instance.port}`)
+      console.log(`上游地址：${instance.config.apiUrl || '（未配置，代理请求会被拒绝）'}`)
+      console.log(`备份数据目录：${instance.config.dataDir}`)
     })
     .catch((error) => {
       console.error(`平台服务启动失败：${error.message}`)

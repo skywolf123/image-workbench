@@ -166,7 +166,22 @@ describe('平台服务：接管 API 代理', () => {
     try {
       const response = await fetch(`${platform.origin}/api-proxy/`, { method: 'POST', body: '{}' })
 
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(503)
+    } finally {
+      await platform.close()
+    }
+  })
+
+  it('未配置上游地址时给出可定位的错误，而不是让进程崩溃', async () => {
+    const platform = await startPlatform({ apiUrl: '' })
+
+    try {
+      const response = await fetch(`${platform.origin}/api-proxy/images/generations`, { method: 'POST', body: '{}' })
+      const body = await response.json()
+
+      expect(response.status).toBe(503)
+      expect(body.error.type).toBe('platform_upstream_missing')
+      expect(body.error.message).toContain('PLATFORM_API_URL')
     } finally {
       await platform.close()
     }

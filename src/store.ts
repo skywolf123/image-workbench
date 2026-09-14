@@ -449,7 +449,7 @@ async function deleteStoredImageIfUnreferenced(imageId: string) {
 
 // localStorage 的存储键必须由我们的命名空间读取，而 persist 在模块加载时就会取值，
 // 所以旧命名的 localStorage 迁移必须在这里同步完成；IndexedDB 部分在 initStore 里 await。
-export const storageMigration = ensureStorageNamespaceMigrated()
+const storageNamespaceMigration = ensureStorageNamespaceMigrated()
 
 export const useStore = create<AppState>()(
   persist(
@@ -1402,7 +1402,7 @@ async function recoverFalTask(taskId: string) {
 /** 初始化：从 IndexedDB 加载任务，按需恢复输入图片，并清理孤立图片 */
 export async function initStore() {
   // IndexedDB 的旧命名迁移要先完成，否则下面读到的会是空库。
-  await storageMigration
+  await storageNamespaceMigration
   const legacyAgentConversations = normalizeAgentConversations(useStore.getState().agentConversations)
   const storedTasks = await getAllTasks()
   const storedAgentConversations = normalizeAgentConversations(await getAllAgentConversations())
