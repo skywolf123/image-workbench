@@ -135,6 +135,7 @@ export interface BackupClient {
 
 export function createBackupClient(config: BackupConfig, fetchImpl: typeof fetch = fetch): BackupClient {
   const base = config.serverUrl.replace(/\/+$/, '')
+  if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持备份所需的网络请求接口。')
 
   async function request(path: string, init: RequestInit = {}) {
     return await fetchImpl(`${base}${path}`, {

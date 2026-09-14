@@ -76,8 +76,10 @@ export function initBackup() {
           },
         )
         if (!plan) return
+        // 设置必须走 setSettings：它内部会再跑一遍预设配置策略，把被剥离的平台字段
+        // 从预置配置里补齐，而不是让空 baseUrl / 空模型留在 profile 里。
+        useStore.getState().setSettings(plan.state.settings)
         useStore.setState({
-          settings: plan.state.settings,
           params: plan.state.params,
           favoriteCollections: plan.state.favoriteCollections,
           defaultFavoriteCollectionId: plan.state.defaultFavoriteCollectionId,

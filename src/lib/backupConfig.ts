@@ -36,6 +36,7 @@ export function readBackupConfig(): BackupConfig {
     const raw = localStorage.getItem(BACKUP_CONFIG_KEY)
     return raw ? normalizeBackupConfig(JSON.parse(raw)) : { ...DEFAULT_BACKUP_CONFIG }
   } catch {
+    // localStorage 不可用（或内容损坏）时按未配置处理。
     return { ...DEFAULT_BACKUP_CONFIG }
   }
 }
