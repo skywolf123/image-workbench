@@ -186,3 +186,17 @@ else params = baseParams
 - `src/lib/apiProfiles.ts` 包含多供应商配置，修改时注意向后兼容。
 - `src/lib/db.ts` 是 IndexedDB 封装层，修改 schema 时需升级 `DB_VERSION` 并处理 `onupgradeneeded`。
 - 修改完成后优先运行 `npm run build` 验证编译，再运行 `npm test` 验证测试。
+
+## Agent skills
+
+### Issue tracker
+
+Issues 和 specs 以 markdown 文件存放在本地 `.scratch/<feature-slug>/` 下（已 gitignore，不进版本库）。See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+使用五个 canonical roles，label 字符串与 role 名相同（`needs-triage`、`needs-info`、`ready-for-agent`、`ready-for-human`、`wontfix`）。See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context：repo 根目录的 `CONTEXT.md` + `docs/adr/`。See `docs/agents/domain.md`.
