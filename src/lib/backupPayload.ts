@@ -1,5 +1,4 @@
-import type { AgentConversation, ApiProfile, AppSettings, FavoriteCollection, TaskRecord } from '../types'
-import type { TaskParams } from '../types'
+import type { AgentConversation, ApiProfile, AppSettings, FavoriteCollection, TaskParams, TaskRecord } from '../types'
 
 /**
  * 备份载荷：平台上自动备份与恢复所用的数据结构。
@@ -56,4 +55,49 @@ export function createBackupPayload(
   source: Omit<BackupPayload, 'settings'>,
 ): BackupPayload {
   return { ...source, settings: stripDeploymentConfig(settings) }
+}
+
+/**
+ * 一致性处理：任务引用了本地不存在的图片时，把那些引用摘掉。
+ *
+ * 服务器是只增不删的，但本地可能清理过图片、备份也可能是在图片上传之前做的，
+ * 于是恢复回来的任务会引用到不存在的 id。留着它们会让画廊里出现渲染不出内容的空任务，
+ * 所以恢复时按本地实际存在的图片 id 过滤一遍引用。
+ */
+export function dropDanglingImageReferences(tasks: TaskRecord[], availableImageIds: Set<string>): TaskRecord[] {
+  return tasks.map((task) => {
+    const outputImages = (task.outputImages ?? []).filter((id) => availableImageIds.has(id))
+    const inputImageIds = (task.inputImageIds ?? []).filter((id) => availableImageIds.has(id))
+    const transparentOriginalImages = task.transparentOriginalImages?.filter((id) => !id || availableImageIds.has(id))
+    const unchanged = outputImages.length === (task.outputImages?.length ?? 0) &&
+      inputImageIds.length === (task.inputImageIds?.length ?? 0) &&
+      transparentOriginalImages?.length === task.transparentOriginalImages?.length &&
+      (!task.maskImageId || availableImageIds.has(task.maskImageId)) &&
+      (!task.maskTargetImageId || availableImageIds.has(task.maskTargetImageId))
+    if (unchanged) return task
+
+    // 原本有输出、恢复后一张都不剩：把它标成错误任务，比留一个没有内容的「已完成」更诚实。
+    const lostAllOutputs = task.status === 'done' && (task.outputImages?.length ?? 0) > 0 && outputImages.length === 0
+
+    return {
+      ...task,
+      outputImages,
+      inputImageIds,
+      ...(transparentOriginalImages ? { transparentOriginalImages } : {}),
+      ...(task.maskImageId && !availableImageIds.has(task.maskImageId) ? { maskImageId: null } : {}),
+      ...(task.maskTargetImageId && !availableImageIds.has(task.maskTargetImageId) ? { maskTargetImageId: null } : {}),
+      // 这两张表按图片 id 建键，同样要跟着清理，否则会留下孤儿条目。
+      ...(task.actualParamsByImage ? { actualParamsByImage: pickAvailableKeys(task.actualParamsByImage, availableImageIds) } : {}),
+      ...(task.revisedPromptByImage ? { revisedPromptByImage: pickAvailableKeys(task.revisedPromptByImage, availableImageIds) } : {}),
+      ...(lostAllOutputs ? { status: 'error' as const, error: '输出图片在恢复时已不可用。' } : {}),
+    }
+  })
+}
+
+function pickAvailableKeys<T>(map: Record<string, T>, availableImageIds: Set<string>) {
+  const next: Record<string, T> = {}
+  for (const [id, value] of Object.entries(map)) {
+    if (availableImageIds.has(id)) next[id] = value
+  }
+  return next
 }

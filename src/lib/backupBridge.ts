@@ -1,4 +1,4 @@
-import { getAllImages, getAllTasks, getImage, putImage, putTask, setImageStoredHook } from './db'
+import { getAllImageIds, getAllTasks, getImage, putImage, putTask, setImageStoredHook } from './db'
 import { normalizePersistedState } from './persistedState'
 import {
   bindBackupSources,
@@ -6,7 +6,7 @@ import {
   enqueueImageBackup,
   scheduleSnapshotBackup,
   setBackupNotifier,
-  setPendingImageReader,
+  setBackupImageReader,
   type BackupSource,
 } from './backupSync'
 import { readBackupConfig, saveBackupConfig, type BackupConfig } from './backupConfig'
@@ -24,10 +24,12 @@ export function initBackup() {
   configureBackup(readBackupConfig())
 
   bindBackupSources({
-    provider: () => {
+    provider: async () => {
       const state = useStore.getState()
+      // 输入图、参考图与遮罩同样属于用户数据：它们不经过生成的统一入口，
+      // 只靠落库时的回调会漏掉，所以全量备份时统一从存储层取。
       return {
-        images: [],
+        images: await getAllImageIds(),
         tasks: state.tasks,
         settings: state.settings,
         params: state.params,
@@ -38,7 +40,7 @@ export function initBackup() {
     },
     sink: {
       async getExistingImageIds() {
-        return new Set((await getAllImages()).map((image) => image.id))
+        return new Set(await getAllImageIds())
       },
       async putImage(id, dataUrl) {
         // 调用方已经过滤过缺失的 id，这里直接写回。
@@ -46,6 +48,9 @@ export function initBackup() {
       },
       async getExistingTaskIds() {
         return new Set((await getAllTasks()).map((task) => task.id))
+      },
+      async getAvailableImageIds() {
+        return new Set(await getAllImageIds())
       },
       async putTasks(tasks) {
         const state = useStore.getState()
@@ -89,16 +94,18 @@ export function initBackup() {
           favoriteCollections: plan.state.favoriteCollections,
           defaultFavoriteCollectionId: plan.state.defaultFavoriteCollectionId,
         })
-        // 会话只在本地没有时才补：恢复语义是只补缺失，绝不覆盖本地已有的整理结果。
-        if (state.agentConversations.length === 0 && payload.agentConversations.length > 0) {
-          useStore.setState({ agentConversations: payload.agentConversations })
+        // Agent 会话也只补缺失：恢复不该覆盖本地已有的整理结果。
+        const existingConversationIds = new Set(state.agentConversations.map((conversation) => conversation.id))
+        const missingConversations = payload.agentConversations.filter((conversation) => !existingConversationIds.has(conversation.id))
+        if (missingConversations.length > 0) {
+          useStore.setState({ agentConversations: [...state.agentConversations, ...missingConversations] })
         }
       },
     },
   })
 
   setImageStoredHook((image) => enqueueImageBackup(image))
-  setPendingImageReader(getImage)
+  setBackupImageReader(getImage)
   setBackupNotifier((message, type) => useStore.getState().showToast(message, type))
   watchForBackupableChanges()
 }

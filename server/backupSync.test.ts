@@ -13,7 +13,7 @@ import {
   runBackupNow,
   runRestore,
   scheduleSnapshotBackup,
-  setPendingImageReader,
+  setBackupImageReader,
   sniffImageExtension,
   type BackupSource,
 } from '../src/lib/backupSync'
@@ -128,6 +128,7 @@ function bindRestore(local: ReturnType<typeof createMemoryStore>, onPayload: (pa
       getExistingImageIds: async () => new Set(local.images.keys()),
       putImage: async (id, dataUrl) => local.putImage(id, dataUrl),
       getExistingTaskIds: async () => new Set(local.tasks.keys()),
+      getAvailableImageIds: async () => new Set(local.images.keys()),
       putTasks: async (next) => local.putTasks(next),
       applyPayload: async (payload) => onPayload(payload),
     },
@@ -147,6 +148,7 @@ beforeEach(() => {
   cleanup = []
   resetBackupForTests()
   configureBackupTiming({ retryDelaysMs: [10], pendingRetryMs: 50, snapshotDebounceMs: 20 })
+  setBackupImageReader(async (id) => ({ id, dataUrl: id === 'image-a' ? DATA_URL_A : DATA_URL_B, createdAt: 1, source: 'generated' }))
 })
 
 afterEach(() => {
@@ -187,7 +189,7 @@ describe('备份载荷', () => {
       configureBackup(config, createBackupClient(config))
 
       await runBackupNow(makeSource({
-        images: [{ id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' }],
+        images: ['image-a'],
       }))
 
       const manifest = await createBackupClient(config).fetchManifest()
@@ -207,10 +209,7 @@ describe('备份与恢复的完整往返', () => {
       const config = makeConfig(platform.origin)
       configureBackup(config, createBackupClient(config))
       await runBackupNow(makeSource({
-        images: [
-          { id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' },
-          { id: 'image-b', dataUrl: DATA_URL_B, createdAt: 1, source: 'generated' },
-        ],
+        images: ['image-a', 'image-b'],
         tasks: [makeTask(), makeTask({ id: 'task-2', prompt: '一只狗' })],
         favoriteCollections: [{ id: 'fav-1', name: '收藏夹', createdAt: 1, updatedAt: 1 }],
       }))
@@ -239,7 +238,7 @@ describe('备份与恢复的完整往返', () => {
       const config = makeConfig(platform.origin)
       configureBackup(config, createBackupClient(config))
       await runBackupNow(makeSource({
-        images: [{ id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' }],
+        images: ['image-a'],
         tasks: [makeTask()],
       }))
 
@@ -261,7 +260,7 @@ describe('备份与恢复的完整往返', () => {
       const config = makeConfig(platform.origin)
       configureBackup(config, createBackupClient(config))
       await runBackupNow(makeSource({
-        images: [{ id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' }],
+        images: ['image-a'],
         tasks: [makeTask({ prompt: '服务器上的旧提示词' })],
       }))
 
@@ -281,7 +280,7 @@ describe('备份与恢复的完整往返', () => {
     }
   })
 
-  it('引用了缺失图片的任务在恢复后仍然写回，不会让画廊空白', async () => {
+  it('引用了不存在图片的任务恢复后被标记，而不是留下渲染不出内容的空任务', async () => {
     const platform = await startPlatform()
     try {
       const config = makeConfig(platform.origin)
@@ -295,7 +294,33 @@ describe('备份与恢复的完整往返', () => {
       const restored = await runRestore()
 
       expect(restored).toEqual({ images: 0, tasks: 1 })
-      expect(local.tasks.get('task-1')!.outputImages).toEqual(['image-never-uploaded'])
+      const task = local.tasks.get('task-1')!
+      expect(task.outputImages).toEqual([])
+      expect(task.status).toBe('error')
+      expect(task.error).toContain('不可用')
+    } finally {
+      await platform.closeServer()
+    }
+  })
+
+  it('引用齐全的任务恢复后保持原状', async () => {
+    const platform = await startPlatform()
+    try {
+      const config = makeConfig(platform.origin)
+      configureBackup(config, createBackupClient(config))
+      await runBackupNow(makeSource({
+        images: ['image-a'],
+        tasks: [makeTask({ outputImages: ['image-a'], inputImageIds: ['image-a'] })],
+      }))
+
+      const local = createMemoryStore()
+      bindRestore(local)
+      await runRestore()
+
+      const task = local.tasks.get('task-1')!
+      expect(task.outputImages).toEqual(['image-a'])
+      expect(task.inputImageIds).toEqual(['image-a'])
+      expect(task.status).toBe('done')
     } finally {
       await platform.closeServer()
     }
@@ -328,7 +353,7 @@ describe('备份与恢复的完整往返', () => {
       const configA = makeConfig(platform.origin, 'member-a')
       configureBackup(configA, createBackupClient(configA))
       await runBackupNow(makeSource({
-        images: [{ id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' }],
+        images: ['image-a'],
         tasks: [makeTask()],
       }))
 
@@ -354,7 +379,7 @@ describe('备份与恢复的完整往返', () => {
       const config = makeConfig(platform.origin)
       configureBackup(config, createBackupClient(config))
       await runBackupNow(makeSource({
-        images: [{ id: 'image-a', dataUrl: DATA_URL_A, createdAt: 1, source: 'generated' }],
+        images: ['image-a'],
       }))
 
       // 本地删掉图片后再备份一次，服务器上仍应保留。
@@ -375,7 +400,7 @@ describe('自动上传', () => {
       const config = makeConfig(platform.origin)
       const client = createBackupClient(config)
       configureBackup(config, client)
-      setPendingImageReader(async (id) => ({ id, dataUrl: DATA_URL_A }))
+      setBackupImageReader(async (id) => ({ id, dataUrl: DATA_URL_A }))
 
       enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
       expect(await waitFor(async () => (await client.fetchManifest()).images.length === 1)).toBe(true)
@@ -395,7 +420,7 @@ describe('自动上传', () => {
     try {
       const brokenConfig = { enabled: true, serverUrl: 'http://127.0.0.1:1', memberId: 'member-a' }
       configureBackup(brokenConfig, createBackupClient(brokenConfig))
-      setPendingImageReader(async (id) => ({ id, dataUrl: DATA_URL_A }))
+      setBackupImageReader(async (id) => ({ id, dataUrl: DATA_URL_A }))
       enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
       await new Promise((resolve) => setTimeout(resolve, 50))
 

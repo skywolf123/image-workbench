@@ -1,6 +1,6 @@
 import type { AgentConversation, AppSettings, FavoriteCollection, StoredImage, TaskParams, TaskRecord } from '../types'
 import { bytesToDataUrl, dataUrlToBytes } from './dataUrl'
-import { createBackupPayload, type BackupPayload, type BackupSnapshot } from './backupPayload'
+import { createBackupPayload, dropDanglingImageReferences, type BackupPayload, type BackupSnapshot } from './backupPayload'
 import type { BackupConfig } from './backupConfig'
 import { getPersistableAgentConversations } from './agentResponseState'
 import { createTaskErrorPatch } from './taskState'
@@ -19,7 +19,8 @@ export interface BackupStatus {
 
 /** 一次备份所需的全部本地数据。 */
 export interface BackupSource {
-  images: StoredImage[]
+  /** 待上传图片的 id。内容在上传时逐个按 id 取，避免一次性把整库原图读进内存。 */
+  images: string[]
   tasks: TaskRecord[]
   settings: AppSettings
   params: TaskParams
@@ -33,6 +34,8 @@ export interface RestoreSink {
   getExistingImageIds: () => Promise<Set<string>>
   putImage: (id: string, dataUrl: string) => Promise<void>
   getExistingTaskIds: () => Promise<Set<string>>
+  /** 恢复写完之后，本地实际可用的图片 id（用于摘掉悬空引用）。 */
+  getAvailableImageIds: () => Promise<Set<string>>
   /** 一次交回全部缺失任务：既落库，也让内存里的任务列表立刻可见。 */
   putTasks: (tasks: TaskRecord[]) => Promise<void>
   applyPayload: (payload: BackupPayload) => Promise<void>
@@ -236,7 +239,7 @@ export function sniffImageExtension(bytes: Uint8Array): string {
 
 let config: BackupConfig | null = null
 let client: BackupClient | null = null
-let snapshotProvider: (() => BackupSource) | null = null
+let snapshotProvider: (() => BackupSource | Promise<BackupSource>) | null = null
 let restoreSink: RestoreSink | null = null
 const pendingImageIds = new Set<string>()
 let draining = false
@@ -254,7 +257,7 @@ export function isBackupActive() {
 }
 
 export function bindBackupSources(sources: {
-  provider: () => BackupSource
+  provider: () => Promise<BackupSource> | BackupSource
   sink: RestoreSink
 }) {
   snapshotProvider = sources.provider
@@ -315,7 +318,7 @@ function schedulePendingRetry() {
 async function uploadOneImage(id: string, image?: StoredImage) {
   try {
     if (await client!.hasImage(id)) return true
-    const source = image?.id === id ? image : await readPendingImage(id)
+    const source = image?.id === id ? image : await readImageForBackup(id)
     if (!source) return false
     await withRetry(() => client!.uploadImage(id, dataUrlToBytes(source.dataUrl).bytes))
     setStatus({ error: null })
@@ -326,15 +329,20 @@ async function uploadOneImage(id: string, image?: StoredImage) {
   }
 }
 
-let pendingImageReader: ((id: string) => Promise<StoredImage | undefined>) | null = null
+let imageReader: ((id: string) => Promise<StoredImage | undefined>) | null = null
 
-/** 自动上传时只有 id，需要回本地存储取出图片内容。 */
-export function setPendingImageReader(reader: (id: string) => Promise<StoredImage | undefined>) {
-  pendingImageReader = reader
+/**
+ * 接线层注入的图片读取实现。
+ *
+ * 全量备份按 id 逐张取图，而不是把整库原图一次性读进内存：4K 图片每张几 MB，
+ * 几百张就足以让标签页崩掉。
+ */
+export function setBackupImageReader(reader: (id: string) => Promise<StoredImage | undefined>) {
+  imageReader = reader
 }
 
-async function readPendingImage(id: string) {
-  return pendingImageReader ? await pendingImageReader(id) : undefined
+function readImageForBackup(id: string) {
+  return imageReader ? imageReader(id) : Promise.resolve(undefined)
 }
 
 // ===== 全量备份 =====
@@ -344,19 +352,24 @@ export interface BackupOutcome {
   version: number
 }
 
+/** 本地数据源尚未接线时返回 null，调用方报明确错误而不是静默不备份。 */
+async function readBackupSource(): Promise<BackupSource | null> {
+  return snapshotProvider ? await snapshotProvider() : null
+}
+
 export async function runBackupNow(source?: BackupSource): Promise<BackupOutcome> {
   if (!isBackupActive() || !client) {
     throw new Error('备份未启用，请先在备份标签页配置服务器地址与成员码。')
   }
-  const data = source ?? snapshotProvider?.()
+  const data = source ?? await readBackupSource()
   if (!data) throw new Error('备份数据源尚未就绪。')
 
   setStatus({ running: true, error: null, message: '正在读取本地数据…', done: 0, total: data.images.length })
   try {
     let done = 0
-    for (const image of data.images) {
+    for (const id of data.images) {
       // 已存在的图片跳过，不重复上传。
-      await uploadOneImage(image.id, image)
+      await uploadOneImage(id, await readImageForBackup(id))
       done++
       setStatus({ done })
     }
@@ -429,11 +442,14 @@ export async function runRestore(): Promise<RestoreOutcome> {
       const existingTaskIds = await sink.getExistingTaskIds()
       const now = Date.now()
       // 运行中的任务其队列/回调标识在恢复后已失效，必须标记为已中断，否则界面会一直转圈。
-      const missingTasks = (snapshot.tasks ?? [])
+      const restoredTasks = (snapshot.tasks ?? [])
         .filter((task) => !existingTaskIds.has(task.id))
         .map((task) => task.status === 'running'
           ? { ...task, ...createTaskErrorPatch(task, '请求中断（已从备份恢复）', now), falRecoverable: false, customRecoverable: false }
           : task)
+      // 一致性处理：摘掉指向不存在图片的引用，避免恢复后出现渲染不出内容的空任务。
+      const availableImageIds = await sink.getAvailableImageIds()
+      const missingTasks = dropDanglingImageReferences(restoredTasks, availableImageIds)
       await sink.putTasks(missingTasks)
       tasks = missingTasks.length
       setStatus({ message: '正在恢复设置与会话…' })
@@ -468,7 +484,7 @@ export function resetBackupForTests() {
   client = null
   snapshotProvider = null
   restoreSink = null
-  pendingImageReader = null
+  imageReader = null
   notify = null
   status = { running: false, total: 0, done: 0, lastSuccessAt: null, error: null, message: null }
 }
