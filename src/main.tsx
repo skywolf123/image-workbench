@@ -6,8 +6,13 @@ import 'streamdown/styles.css'
 import 'katex/dist/katex.min.css'
 import './index.css'
 import { installMobileViewportGuards } from './lib/viewport'
+import { requestPersistentStorage } from './lib/storagePersistence'
 
 installMobileViewportGuards()
+
+if (import.meta.env.PROD) {
+  void requestPersistentStorage()
+}
 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {

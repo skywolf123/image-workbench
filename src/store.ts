@@ -68,6 +68,8 @@ import { ALL_FAVORITES_COLLECTION_ID, DEFAULT_FAVORITE_COLLECTION_ID, createDefa
 import { createPersistedState, mergePersistedAgentConversations, migratePersistedState, normalizePersistedState } from './lib/persistedState'
 import { addImageSizeParam, createTaskDonePatch, createTaskErrorPatch, deriveAgentImageActualParams, deriveGalleryActualParams, firstActualParams, hasActualParams, hasActualSizeParam, mapActualParamsByImage, mapRevisedPromptsByImage, markInterruptedOpenAIRunningTasks } from './lib/taskState'
 import { stripInjectedCodexCliSizePrompt } from './lib/size'
+import { ensureStorageNamespaceMigrated } from './lib/storageMigration'
+import { STORAGE_NAME } from './lib/storageNamespace'
 
 const FAL_RECOVERY_POLL_MS = 10_000
 const CUSTOM_RECOVERY_POLL_MS = 10_000
@@ -444,6 +446,10 @@ async function deleteStoredImageIfUnreferenced(imageId: string) {
     })
   }
 }
+
+// localStorage 的存储键必须由我们的命名空间读取，而 persist 在模块加载时就会取值，
+// 所以旧命名的 localStorage 迁移必须在这里同步完成；IndexedDB 部分在 initStore 里 await。
+export const storageMigration = ensureStorageNamespaceMigrated()
 
 export const useStore = create<AppState>()(
   persist(
@@ -971,7 +977,7 @@ export const useStore = create<AppState>()(
       },
     }),
     {
-      name: 'gpt-image-playground',
+      name: STORAGE_NAME,
       version: 2,
       migrate: migratePersistedState,
       partialize: getPersistedState,
@@ -1395,6 +1401,8 @@ async function recoverFalTask(taskId: string) {
 
 /** 初始化：从 IndexedDB 加载任务，按需恢复输入图片，并清理孤立图片 */
 export async function initStore() {
+  // IndexedDB 的旧命名迁移要先完成，否则下面读到的会是空库。
+  await storageMigration
   const legacyAgentConversations = normalizeAgentConversations(useStore.getState().agentConversations)
   const storedTasks = await getAllTasks()
   const storedAgentConversations = normalizeAgentConversations(await getAllAgentConversations())

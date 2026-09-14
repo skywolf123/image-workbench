@@ -1,6 +1,7 @@
 import type { AgentConversation, TaskRecord, StoredImage, StoredImageThumbnail } from '../types'
+import { STORAGE_NAME } from './storageNamespace'
 
-const DB_NAME = 'gpt-image-playground'
+const DB_NAME = STORAGE_NAME
 const DB_VERSION = 3
 const STORE_TASKS = 'tasks'
 const STORE_IMAGES = 'images'
@@ -12,24 +13,25 @@ const THUMBNAIL_VERSION = 2
 
 export const CURRENT_THUMBNAIL_VERSION = THUMBNAIL_VERSION
 
+export function createObjectStores(db: IDBDatabase) {
+  if (!db.objectStoreNames.contains(STORE_TASKS)) {
+    db.createObjectStore(STORE_TASKS, { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains(STORE_IMAGES)) {
+    db.createObjectStore(STORE_IMAGES, { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains(STORE_THUMBNAILS)) {
+    db.createObjectStore(STORE_THUMBNAILS, { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains(STORE_AGENT_CONVERSATIONS)) {
+    db.createObjectStore(STORE_AGENT_CONVERSATIONS, { keyPath: 'id' })
+  }
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = (e) => {
-      const db = (e.target as IDBOpenDBRequest).result
-      if (!db.objectStoreNames.contains(STORE_TASKS)) {
-        db.createObjectStore(STORE_TASKS, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORE_IMAGES)) {
-        db.createObjectStore(STORE_IMAGES, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORE_THUMBNAILS)) {
-        db.createObjectStore(STORE_THUMBNAILS, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORE_AGENT_CONVERSATIONS)) {
-        db.createObjectStore(STORE_AGENT_CONVERSATIONS, { keyPath: 'id' })
-      }
-    }
+    req.onupgradeneeded = () => createObjectStores(req.result)
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
   })
