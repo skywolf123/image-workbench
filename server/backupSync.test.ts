@@ -14,6 +14,7 @@ import {
   resetBackupForTests,
   runBackupNow,
   runRestore,
+  scheduleSnapshotBackup,
   setPendingImageReader,
   type BackupSource,
 } from '../src/lib/backupSync'
@@ -422,5 +423,35 @@ describe('编解码', () => {
     expect(bytes[0]).toBe(0x89)
     expect(bytes[1]).toBe(0x50)
     expect(new TextDecoder().decode(bytes)).not.toContain('data:image')
+  })
+})
+
+describe('备份未启用时', () => {
+  it('图片落库不产生任何上传请求，应用其余功能不受影响', async () => {
+    const platform = await startPlatform()
+    try {
+      configureBackup({ enabled: false, serverUrl: platform.origin, memberId: 'member-a' })
+      enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
+      scheduleSnapshotBackup()
+      await new Promise((resolve) => setTimeout(resolve, 60))
+
+      expect((await createBackupClient(makeConfig(platform.origin)).fetchManifest()).images).toEqual([])
+    } finally {
+      await platform.closeServer()
+    }
+  })
+
+  it('缺少成员码或服务器地址时也不上传', async () => {
+    const platform = await startPlatform()
+    try {
+      configureBackup({ enabled: true, serverUrl: platform.origin, memberId: '' })
+      enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
+      await new Promise((resolve) => setTimeout(resolve, 60))
+
+      expect((await createBackupClient(makeConfig(platform.origin)).fetchManifest()).images).toEqual([])
+      await expect(runBackupNow(makeSource())).rejects.toThrow('备份未启用')
+    } finally {
+      await platform.closeServer()
+    }
   })
 })
