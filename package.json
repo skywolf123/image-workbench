@@ -1,5 +1,5 @@
 {
-  "name": "gpt-image-studio",
+  "name": "image-workbench",
   "private": true,
   "version": "0.7.12",
   "type": "module",
@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "deploy:cf": "npm run build && wrangler deploy",
     "preview": "vite preview",
+    "start": "node server/index.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

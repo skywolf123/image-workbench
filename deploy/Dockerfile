@@ -11,6 +11,7 @@ ENV VITE_DOCKER_LEGACY_API_URL_USED=__VITE_DOCKER_LEGACY_API_URL_USED_PLACEHOLDE
 ENV VITE_SHOW_PRESET_CONFIG_ONLY=__VITE_SHOW_PRESET_CONFIG_ONLY_PLACEHOLDER__
 ENV VITE_LOCK_PRESET_CONFIG_PARAMS=__VITE_LOCK_PRESET_CONFIG_PARAMS_PLACEHOLDER__
 ENV VITE_PREVENT_PRESET_CONFIG_DELETION=__VITE_PREVENT_PRESET_CONFIG_DELETION_PLACEHOLDER__
+ENV VITE_PLATFORM_MODE=__VITE_PLATFORM_MODE_PLACEHOLDER__
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -19,23 +20,33 @@ COPY . .
 RUN npm run build
 
 # ---- Production stage ----
-FROM nginx:alpine
+# runtime 由 Node 取代 Nginx：同一个进程既托管静态产物，也接住 /api-proxy/* 并在转发时
+# 注入平台 Key，顺带提供备份接口。上游的注入脚本与 nginx 配置仍然保留在仓库里，
+# 作为「纯静态 + Nginx」这套部署方案的存档（见 README）。
+FROM node:20-alpine
+
+WORKDIR /app
 
 ENV HOST=0.0.0.0
-ENV PORT=80
+ENV PORT=3000
+ENV DATA_DIR=/data
+ENV DIST_DIR=/app/dist
 ENV DEFAULT_API_URL=
 ENV API_PROXY_URL=
+ENV PLATFORM_API_URL=
+ENV PLATFORM_API_KEY=
+ENV PLATFORM_API_KEY_FILE=
 ENV ENABLE_API_PROXY=false
 ENV LOCK_API_PROXY=false
 ENV SHOW_PRESET_CONFIG_ONLY=false
 ENV LOCK_PRESET_CONFIG_PARAMS=false
 ENV PREVENT_PRESET_CONFIG_DELETION=false
+ENV PLATFORM_MODE=false
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY deploy/nginx.conf /etc/nginx/templates/default.conf.template
-COPY --chmod=755 deploy/migrate-api-env.envsh /docker-entrypoint.d/05-migrate-api-env.envsh
-COPY --chmod=755 deploy/inject-api-url.sh /docker-entrypoint.d/40-inject-api-url.sh
+COPY --from=build /app/dist ./dist
+COPY server ./server
 
-EXPOSE 80
+VOLUME ["/data"]
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server/index.mjs"]

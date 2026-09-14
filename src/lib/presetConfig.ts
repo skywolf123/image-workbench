@@ -6,6 +6,33 @@ const SHOW_PRESET_CONFIG_ONLY = (RAW_SHOW_PRESET_CONFIG_ONLY || readRuntimeEnv(i
 const LOCK_PRESET_CONFIG_PARAMS = readRuntimeEnv(import.meta.env.VITE_LOCK_PRESET_CONFIG_PARAMS) === 'true'
 const PREVENT_PRESET_CONFIG_DELETION = readRuntimeEnv(import.meta.env.VITE_PREVENT_PRESET_CONFIG_DELETION) === 'true'
 
+/**
+ * 平台模式的构建期开关。
+ *
+ * 它只决定界面的形态（隐藏哪些字段、放宽哪些校验），不承载平台配置本身的数据——
+ * 上游地址与模型仍走预置配置 JSON，平台 Key 只存在于服务端进程里。因此它不违反
+ * 「同一份构建产物支持两种部署形态」这条约束。
+ */
+const PLATFORM_MODE = readRuntimeEnv(import.meta.env.VITE_PLATFORM_MODE) === 'true'
+
+/**
+ * 平台模式的唯一出口。其余代码只读这个函数，不各自判断环境变量，回退路径只需要在这一处验证。
+ * 平台模式在上游锁定机制上叠加一档更强的锁定，而不是与之并行的第二套体系。
+ */
+export function isPlatformMode() {
+  return PLATFORM_MODE
+}
+
+/** 平台模式下 API 配置由管理员统一管理，API Key 输入区块整块不渲染。 */
+export function shouldHideApiKeyField() {
+  return PLATFORM_MODE
+}
+
+/** 平台模式下 Key 由服务端在代理时注入，前端不再要求它非空。 */
+export function requiresApiKey() {
+  return !PLATFORM_MODE
+}
+
 let presetProfiles: ApiProfile[] = []
 let presetProviders: CustomProviderDefinition[] = []
 let presetProfileFields: Record<string, string[]> | undefined
@@ -62,15 +89,15 @@ export function isPresetProvider(id: string) {
 }
 
 export function isPresetConfigOnlyEnabled() {
-  return SHOW_PRESET_CONFIG_ONLY && presetProfiles.length > 0
+  return (SHOW_PRESET_CONFIG_ONLY || PLATFORM_MODE) && presetProfiles.length > 0
 }
 
 export function isPresetConfigParamsLocked() {
-  return LOCK_PRESET_CONFIG_PARAMS && presetProfiles.length > 0
+  return (LOCK_PRESET_CONFIG_PARAMS || PLATFORM_MODE) && presetProfiles.length > 0
 }
 
 export function isPresetConfigDeletionPrevented() {
-  return (PREVENT_PRESET_CONFIG_DELETION || SHOW_PRESET_CONFIG_ONLY) && presetProfiles.length > 0
+  return (PREVENT_PRESET_CONFIG_DELETION || SHOW_PRESET_CONFIG_ONLY || PLATFORM_MODE) && presetProfiles.length > 0
 }
 
 export function isPresetProfileLocked(id: string) {
