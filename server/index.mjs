@@ -140,29 +140,35 @@ async function resolveDefaultApiUrl(value) {
 
 export async function resolveServerConfig(options = {}) {
   const env = options.env ?? process.env
-  // 旧版 Docker 变量 API_URL 同时作为两个新变量的兜底值，与上游 migrate-api-env 行为一致。
+  // 旧版 Docker 变量 API_URL 同样作为兜底值，与上游 migrate-api-env 行为一致。
   const legacyApiUrl = readText(env.API_URL)
+  // API_PROXY_URL 是上游 Nginx 方案里的代理目标，容器 runtime 换成 Node 后由本进程接手，
+  // 所以这里继续认这个变量名，避免照 README 配的人静默失效。
+  const proxyApiUrl = readText(env.API_PROXY_URL)
   const apiKeyFile = readText(env.PLATFORM_API_KEY_FILE)
   const envApiKey = readText(env.PLATFORM_API_KEY)
+  const apiKey = options.apiKey !== undefined ? options.apiKey : apiKeyFile ? readApiKeyFile(apiKeyFile) : envApiKey || null
 
   return {
     host: readText(options.host ?? env.HOST) || '0.0.0.0',
     port: Number(options.port ?? env.PORT ?? 3000),
     distDir: resolve(options.distDir ?? (readText(env.DIST_DIR) || defaultDistDir)),
     dataDir: resolve(options.dataDir ?? (readText(env.DATA_DIR) || '/data')),
-    apiUrl: readText(options.apiUrl ?? env.PLATFORM_API_URL) || legacyApiUrl,
-    apiKey: options.apiKey !== undefined ? options.apiKey : apiKeyFile ? readApiKeyFile(apiKeyFile) : envApiKey || null,
+    apiUrl: readText(options.apiUrl ?? env.PLATFORM_API_URL) || proxyApiUrl || legacyApiUrl,
+    apiKey,
     proxyTimeoutMs: Number(readText(env.PLATFORM_PROXY_TIMEOUT_MS) || 600_000),
     bundleValues: {
       defaultApiUrl: await resolveDefaultApiUrl(readText(options.defaultApiUrl ?? env.DEFAULT_API_URL)),
-      apiProxyAvailable: isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL)) ? 'true' : 'false',
-      apiProxyLocked: (isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL))) && isTruthy(env.LOCK_API_PROXY) ? 'true' : 'false',
+      apiProxyAvailable: isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL) || proxyApiUrl) ? 'true' : 'false',
+      apiProxyLocked: (isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL) || proxyApiUrl)) && isTruthy(env.LOCK_API_PROXY) ? 'true' : 'false',
       dockerDeployment: 'true',
       dockerLegacyApiUrlUsed: legacyApiUrl ? 'true' : 'false',
       showPresetConfigOnly: isTruthy(env.SHOW_PRESET_CONFIG_ONLY) || isTruthy(env.SHOW_DEFAULT_CONFIG_ONLY) ? 'true' : 'false',
       presetConfigParamsLocked: isTruthy(env.LOCK_PRESET_CONFIG_PARAMS) ? 'true' : 'false',
       presetConfigDeletionPrevented: isTruthy(env.PREVENT_PRESET_CONFIG_DELETION) ? 'true' : 'false',
-      platformMode: isTruthy(env.PLATFORM_MODE) ? 'true' : 'false',
+      // 有平台 Key 就说明这个部署在替用户出 Key：界面该隐藏 Key 字段，并由服务端代注入。
+      // 不需要用户额外声明 PLATFORM_MODE —— 少一个必须记得开的开关，就少一处配错。
+      platformMode: isTruthy(env.PLATFORM_MODE) || Boolean(apiKey) ? 'true' : 'false',
     },
   }
 }
@@ -370,6 +376,18 @@ function sendBytes(res, status, contentType, bytes) {
 }
 
 async function handleBackup(req, res, store) {
+  // 能力探测：前端用它决定要不要显示成员码与同步。放在成员校验之前，
+  // 因为「服务器在不在」与「你是哪个成员」是两回事。
+  const routePath = req.url.split('?')[0]
+  if (routePath === `${BACKUP_PREFIX}/ping`) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      sendError(res, 405, '只支持 GET 请求', 'method_not_allowed')
+      return
+    }
+    sendJson(res, 200, { ok: true })
+    return
+  }
+
   const memberId = resolveMemberId(req)
   if (!memberId) {
     sendError(res, 400, '缺少或非法的 X-Member-Id 请求头', 'member_id_invalid')

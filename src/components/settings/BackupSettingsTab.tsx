@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { applyBackupConfig } from '../../lib/backupBridge'
+import { adoptMemberId, applyBackupConfig } from '../../lib/backupBridge'
 import {
   getBackupStatus,
-  runBackupNow,
+  memberExistsOnServer,
   runRestore,
   subscribeBackupStatus,
   type BackupStatus,
@@ -29,36 +29,19 @@ export default function BackupSettingsTab() {
   useEffect(() => subscribeBackupStatus(setStatus), [])
 
   const requiresMemberId = !config.memberId
-  const backupDisabled = !config.enabled || !config.serverUrl || requiresMemberId
+  const backupDisabled = requiresMemberId
 
+  /** 配置一旦改动就立即生效，客户端后续请求会带上新值。 */
   const persist = (next: BackupConfig) => {
     setConfig(next)
     applyBackupConfig(next)
   }
 
-  /** 改成员码等于切换命名空间，必须让用户知情后再手动同步。 */
-  const commitMemberId = (nextMemberId: string) => {
-    const trimmed = nextMemberId.trim()
-    if (trimmed === config.memberId) return
-    if (!config.memberId) {
-      persist({ ...config, memberId: trimmed })
-      return
-    }
-    setConfirmDialog({
-      title: '更换成员码',
-      message: '成员码决定你在服务器上的数据空间。修改后需要手动触发一次同步，才能把新空间的数据取回本地。\n\n这次同步是单向的（服务器 → 本地），会以服务器数据更新本地，本地未备份的内容将丢失。\n\n确认要更换吗？',
-      confirmText: '确认更换',
-      icon: 'info',
-      action: () => persist({ ...config, memberId: trimmed }),
-      cancelAction: () => {},
-    })
-  }
-
-  const triggerBackup = async () => {
+  const syncFromServer = async () => {
     setBusy(true)
     try {
-      const outcome = await runBackupNow()
-      showToast(`备份完成：${outcome.images} 张图片（快照版本 ${outcome.version}）`, 'success')
+      const outcome = await runRestore()
+      showToast(`同步完成：${outcome.images} 张图片、${outcome.tasks} 个任务`, 'success')
     } catch {
       // 失败原因已经写入状态并在面板上展示。
     } finally {
@@ -66,16 +49,72 @@ export default function BackupSettingsTab() {
     }
   }
 
-  const triggerRestore = async () => {
+  /**
+   * 切换成员码，必须让用户知情后再动作。
+   *
+   * 服务器上已有这个码 → 同步一次，用那个空间的记录替换本地。
+   * 服务器上没有 → 新建一个成员空间，把本地内容备份到这个码下（本地的东西没有理由丢掉）。
+   */
+  const commitMemberId = async (nextMemberId: string) => {
+    const trimmed = nextMemberId.trim()
+    if (!trimmed || trimmed === config.memberId) return
+
+    setConfig({ ...config, memberId: trimmed })
     setBusy(true)
+    let exists = false
     try {
-      const outcome = await runRestore()
-      showToast(`恢复完成：${outcome.images} 张图片、${outcome.tasks} 个任务`, 'success')
+      exists = await memberExistsOnServer({ ...config, memberId: trimmed })
     } catch {
-      // 同上。
-    } finally {
+      // 探测不到服务器时不能猜：猜错会要么白清本地、要么该同步的没同步。
+      showToast('无法确认服务器上是否有这个成员码，请检查备份服务器地址。', 'error')
+      setConfig(config)
       setBusy(false)
+      return
     }
+    setBusy(false)
+
+    const next = { ...config, memberId: trimmed }
+    const adopt = () => {
+      setBusy(true)
+      void adoptMemberId(trimmed)
+        .then((result: 'synced' | 'created') => showToast(result === 'synced' ? '已同步服务器上的数据到本地。' : '已把本地内容备份到这个成员码下。', 'success'))
+        .catch(() => {
+          // 失败原因已经写入状态并在面板上展示。
+        })
+        .finally(() => setBusy(false))
+    }
+
+    setConfirmDialog(exists
+      ? {
+          title: '同步到已有成员码',
+          message: `服务器上已经有「${trimmed}」这个成员码，它有自己的图片和任务记录。\n\n确认后会用服务器上的记录替换本地，本地未备份的内容将丢失。`,
+          confirmText: '覆盖本地并同步',
+          tone: 'warning',
+          icon: 'info',
+          action: () => { persist(next); adopt() },
+          cancelAction: () => setConfig(config),
+        }
+      : {
+          title: '新建成员码',
+          message: `服务器上还没有「${trimmed}」这个成员码，确认后将新建一个成员空间，并把本设备现有的图片与任务备份到这个码下。\n\n本地内容不会被删除。`,
+          confirmText: '新建并备份',
+          tone: 'warning',
+          icon: 'info',
+          action: () => { persist(next); adopt() },
+          cancelAction: () => setConfig(config),
+        })
+  }
+
+  const confirmSync = () => {
+    setConfirmDialog({
+      title: '同步',
+      message: '同步会用服务器上的数据替换本地数据，本地未备份的内容将丢失。\n\n备份到服务器上的内容不受影响。',
+      confirmText: '覆盖本地并同步',
+      tone: 'warning',
+      icon: 'info',
+      action: () => { void syncFromServer() },
+      cancelAction: () => {},
+    })
   }
 
   const running = busy || status.running
@@ -83,51 +122,19 @@ export default function BackupSettingsTab() {
   return (
     <div className="space-y-4">
       <div className="block">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <span className="block text-sm text-gray-600 dark:text-gray-300">启用自动备份</span>
-          <button
-            type="button"
-            onClick={() => persist({ ...config, enabled: !config.enabled })}
-            className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${config.enabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-            role="switch"
-            aria-checked={config.enabled}
-            aria-label="启用自动备份"
-          >
-            <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${config.enabled ? 'translate-x-[14px]' : 'translate-x-[2px]'}`} />
-          </button>
-        </div>
-        <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-          开启后，新生成的图片与任务记录会在后台自动上传到备份服务器。浏览器存储被清空时，可以用下面的「立即恢复」取回数据。
-        </div>
-      </div>
-
-      <div className="block">
-        <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">备份服务器地址</span>
-        <input
-          value={config.serverUrl}
-          onChange={(e) => setConfig({ ...config, serverUrl: e.target.value })}
-          onBlur={(e) => persist({ ...config, serverUrl: e.target.value.trim() })}
-          placeholder="http://nas.local:3000"
-          className={inputClassName}
-        />
-        <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-          部署了平台服务端时的访问地址。留空表示不使用备份。
-        </div>
-      </div>
-
-      <div className="block">
         <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">成员码</span>
         <input
           value={config.memberId}
           onChange={(e) => setConfig({ ...config, memberId: e.target.value })}
-          onBlur={(e) => commitMemberId(e.target.value)}
+          onBlur={(e) => { void commitMemberId(e.target.value) }}
+          disabled={running}
           placeholder="例如 wb-8f3a2c91"
           className={inputClassName}
         />
         <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
           {requiresMemberId
-            ? '首次使用请填写一个成员码，它只是服务器上区分家人的数据空间的名字，不会上传给任何第三方。建议用随机字符串，避免被猜到。'
-            : '成员码决定你在服务器上的数据空间。修改后需要手动触发一次同步，这次同步是单向的（服务器 → 本地），会以服务器数据更新本地，本地未备份的内容将丢失。'}
+            ? '服务器上用于区分成员的数据空间的名字，请向部署者索取，或自己新建一个。'
+            : '修改成员码会切换数据空间。服务器上没有这个码时会新建，并把本设备的内容备份过去；已有时会用服务器上的记录覆盖本地。'}
         </div>
       </div>
 
@@ -143,38 +150,22 @@ export default function BackupSettingsTab() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={triggerBackup}
+          onClick={confirmSync}
           disabled={backupDisabled || running}
           className="rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2 text-sm text-gray-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.06]"
         >
-          立即备份
-        </button>
-        <button
-          type="button"
-          onClick={triggerRestore}
-          disabled={backupDisabled || running}
-          className="rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2 text-sm text-gray-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:bg-white/[0.06]"
-        >
-          立即恢复
+          同步
         </button>
       </div>
 
       {backupDisabled && (
         <div data-selectable-text className="text-xs text-amber-600 dark:text-amber-400">
-          {requiresMemberId
-            ? '请先填写成员码，备份功能才会开始工作。未启用备份时，应用的其余功能不受影响。'
-            : '请先开启自动备份并填写服务器地址，备份功能才会开始工作。'}
-        </div>
-      )}
-
-      {!config.enabled && !requiresMemberId && (
-        <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-          备份已关闭。应用其余功能不受影响，本地数据仍只会保存在浏览器里。
+          填写成员码后，本设备的内容会自动备份到服务器。
         </div>
       )}
 
       <div data-selectable-text className="text-xs text-gray-500 dark:text-gray-500">
-        恢复只会补上本地缺少的数据，不会覆盖或删除本地已有内容，因此重复执行是安全的。备份服务器上的图片只增不删。
+        新生成的图片与任务会在后台自动备份到服务器。上面的「同步」会用服务器上的数据整体替换本地数据，本地未备份的内容会丢失；服务器上的备份只增不删。
       </div>
     </div>
   )

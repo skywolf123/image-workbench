@@ -13,13 +13,14 @@ import {
   runBackupNow,
   runRestore,
   scheduleSnapshotBackup,
+  setBackupBaseUrlForTests,
   setBackupImageReader,
   sniffImageExtension,
   type BackupSource,
 } from '../src/lib/backupSync'
 import { bytesToDataUrl, dataUrlToBytes } from '../src/lib/dataUrl'
 import type { BackupConfig } from '../src/lib/backupConfig'
-import type { AppSettings, StoredImage, TaskRecord } from '../src/types'
+import type { AgentConversation, AgentRound, AppSettings, StoredImage, TaskRecord } from '../src/types'
 import { DEFAULT_SETTINGS, createDefaultOpenAIProfile, normalizeSettings } from '../src/lib/apiProfiles'
 
 const DATA_URL_A = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
@@ -53,6 +54,10 @@ function createMemoryStore() {
     putTasks(next: TaskRecord[]) {
       for (const task of next) tasks.set(task.id, task)
     },
+    clear() {
+      images.clear()
+      tasks.clear()
+    },
   }
 }
 
@@ -77,6 +82,34 @@ function makeTask(overrides: Partial<TaskRecord> = {}): TaskRecord {
     createdAt: 1,
     finishedAt: 2,
     elapsed: 1,
+    ...overrides,
+  }
+}
+
+function makeConversation(overrides: Partial<AgentConversation> = {}): AgentConversation {
+  return {
+    id: 'conversation-1',
+    title: '会话',
+    rounds: [],
+    messages: [],
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  }
+}
+
+function makeRound(overrides: Partial<AgentRound> = {}): AgentRound {
+  return {
+    id: 'round-1',
+    index: 1,
+    userMessageId: 'message-1',
+    prompt: '画一只猫',
+    inputImageIds: [],
+    outputTaskIds: [],
+    status: 'done',
+    error: null,
+    createdAt: 1,
+    finishedAt: 2,
     ...overrides,
   }
 }
@@ -113,7 +146,8 @@ async function startPlatform() {
 }
 
 function makeConfig(origin: string, memberId = 'member-a'): BackupConfig {
-  return { enabled: true, serverUrl: origin, memberId }
+  setBackupBaseUrlForTests(origin)
+  return { memberId }
 }
 
 function readServerState(dataDir: string, memberId: string) {
@@ -131,6 +165,7 @@ function bindRestore(local: ReturnType<typeof createMemoryStore>, onPayload: (pa
       getAvailableImageIds: async () => new Set(local.images.keys()),
       putTasks: async (next) => local.putTasks(next),
       applyPayload: async (payload) => onPayload(payload),
+      clearLocal: async () => local.clear(),
     },
   })
 }
@@ -147,12 +182,14 @@ async function waitFor(predicate: () => Promise<boolean> | boolean, timeoutMs = 
 beforeEach(() => {
   cleanup = []
   resetBackupForTests()
+  setBackupBaseUrlForTests(null)
   configureBackupTiming({ retryDelaysMs: [10], pendingRetryMs: 50, snapshotDebounceMs: 20 })
   setBackupImageReader(async (id) => ({ id, dataUrl: id === 'image-a' ? DATA_URL_A : DATA_URL_B, createdAt: 1, source: 'generated' }))
 })
 
 afterEach(() => {
   resetBackupForTests()
+  setBackupBaseUrlForTests(null)
   configureBackupTiming({ retryDelaysMs: [1_000, 5_000, 15_000], pendingRetryMs: 30_000, snapshotDebounceMs: 3_000 })
   for (const dir of cleanup) rmSync(dir, { recursive: true, force: true })
 })
@@ -232,7 +269,7 @@ describe('备份与恢复的完整往返', () => {
     }
   })
 
-  it('重复执行恢复结果一致、无重复记录', async () => {
+  it('同一个成员码重复同步结果一致、无重复记录', async () => {
     const platform = await startPlatform()
     try {
       const config = makeConfig(platform.origin)
@@ -254,14 +291,14 @@ describe('备份与恢复的完整往返', () => {
     }
   })
 
-  it('不覆盖本地已有的同 id 数据，也不删除本地数据', async () => {
+  it('用服务器上的数据整体替换本地，本地独有的内容被清掉', async () => {
     const platform = await startPlatform()
     try {
       const config = makeConfig(platform.origin)
       configureBackup(config, createBackupClient(config))
       await runBackupNow(makeSource({
         images: ['image-a'],
-        tasks: [makeTask({ prompt: '服务器上的旧提示词' })],
+        tasks: [makeTask({ prompt: '服务器上的提示词' })],
       }))
 
       const local = createMemoryStore()
@@ -272,9 +309,10 @@ describe('备份与恢复的完整往返', () => {
 
       await runRestore()
 
-      expect(local.images.get('image-a')!.dataUrl).toBe(DATA_URL_B)
-      expect(local.tasks.get('task-1')!.prompt).toBe('本地较新的提示词')
-      expect(local.images.has('image-local-only')).toBe(true)
+      // 同 id 的内容以服务器为准，本地独有的图片不再保留。
+      expect(local.images.get('image-a')!.dataUrl).toBe(DATA_URL_A)
+      expect(local.tasks.get('task-1')!.prompt).toBe('服务器上的提示词')
+      expect(local.images.has('image-local-only')).toBe(false)
     } finally {
       await platform.closeServer()
     }
@@ -418,7 +456,8 @@ describe('自动上传', () => {
   it('服务器暂时不可用时重试，恢复后图片最终被备份', async () => {
     const platform = await startPlatform()
     try {
-      const brokenConfig = { enabled: true, serverUrl: 'http://127.0.0.1:1', memberId: 'member-a' }
+      setBackupBaseUrlForTests('http://127.0.0.1:1')
+      const brokenConfig = { memberId: 'member-a' }
       configureBackup(brokenConfig, createBackupClient(brokenConfig))
       setBackupImageReader(async (id) => ({ id, dataUrl: DATA_URL_A }))
       enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
@@ -457,11 +496,12 @@ describe('编解码', () => {
   })
 })
 
-describe('备份未启用时', () => {
-  it('图片落库不产生任何上传请求，应用其余功能不受影响', async () => {
+describe('备份未配置时', () => {
+  it('没有服务器地址时图片落库不产生任何上传请求，应用其余功能不受影响', async () => {
     const platform = await startPlatform()
     try {
-      configureBackup({ enabled: false, serverUrl: platform.origin, memberId: 'member-a' })
+      setBackupBaseUrlForTests('http://127.0.0.1:1')
+      configureBackup({ memberId: 'member-a' })
       enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
       scheduleSnapshotBackup()
       await new Promise((resolve) => setTimeout(resolve, 60))
@@ -472,15 +512,136 @@ describe('备份未启用时', () => {
     }
   })
 
-  it('缺少成员码或服务器地址时也不上传', async () => {
+  it('缺少成员码时也不上传', async () => {
     const platform = await startPlatform()
     try {
-      configureBackup({ enabled: true, serverUrl: platform.origin, memberId: '' })
+      setBackupBaseUrlForTests(platform.origin)
+      configureBackup({ memberId: '' })
       enqueueImageBackup({ id: 'image-a', dataUrl: DATA_URL_A })
       await new Promise((resolve) => setTimeout(resolve, 60))
 
       expect((await createBackupClient(makeConfig(platform.origin)).fetchManifest()).images).toEqual([])
       await expect(runBackupNow(makeSource())).rejects.toThrow('备份未启用')
+    } finally {
+      await platform.closeServer()
+    }
+  })
+})
+
+describe('成员码切换：同步即替换', () => {
+  it('换到已有成员码：本地数据整套换成那个成员空间的数据', async () => {
+    const platform = await startPlatform()
+    try {
+      const origin = platform.origin
+      // 先用 member-a 备份一份「旧成员」的数据。
+      const configA = makeConfig(origin, 'member-a')
+      configureBackup(configA, createBackupClient(configA))
+      await runBackupNow(makeSource({
+        images: ['image-a'],
+        // 只给任务引用得到 image-a，避免上传时被当成悬空引用摘掉。
+        tasks: [makeTask({ outputImages: ['image-a'] })],
+      }))
+      // 再给 member-b 准备一份不同的数据。
+      const configB = makeConfig(origin, 'member-b')
+      configureBackup(configB, createBackupClient(configB))
+      await runBackupNow(makeSource({
+        images: ['image-b'],
+        tasks: [makeTask({ id: 'task-b', outputImages: ['image-b'] })],
+      }))
+
+      // 本地当前是 member-a 的内容，再加上一条本地独有、从未备份过的记录。
+      const local = createMemoryStore()
+      local.putImage('image-a', DATA_URL_A)
+      local.putTasks([makeTask({ id: 'task-1' }), makeTask({ id: 'local-only' })])
+      bindRestore(local)
+
+      // 切到 member-b 后同步。
+      configureBackup(configB, createBackupClient(configB))
+      await runRestore()
+
+      expect([...local.images.keys()]).toEqual(['image-b'])
+      expect([...local.tasks.keys()]).toEqual(['task-b'])
+      expect(local.tasks.has('local-only')).toBe(false)
+    } finally {
+      await platform.closeServer()
+    }
+  })
+
+  it('服务器上还没这个成员码时，同步得到的是一个空空间', async () => {
+    const platform = await startPlatform()
+    try {
+      const config = makeConfig(platform.origin, 'brand-new-member')
+      configureBackup(config, createBackupClient(config))
+
+      const local = createMemoryStore()
+      local.putImage('local-only', DATA_URL_B)
+      local.putTasks([makeTask({ id: 'local-only' })])
+      bindRestore(local)
+
+      // 服务器上没有这个码：没有清单、没有快照，同步后本地被清空。
+      const outcome = await runRestore()
+
+      expect(outcome).toEqual({ images: 0, tasks: 0 })
+      expect(local.images.size).toBe(0)
+      expect(local.tasks.size).toBe(0)
+    } finally {
+      await platform.closeServer()
+    }
+  })
+})
+
+describe('Agent 会话的运行中状态', () => {
+  it('运行中的轮次在备份时就被收尾，不会把永远转圈的状态存进服务器', async () => {
+    const platform = await startPlatform()
+    try {
+      const config = makeConfig(platform.origin)
+      const client = createBackupClient(config)
+      configureBackup(config, client)
+      await runBackupNow(makeSource({
+        agentConversations: [makeConversation({
+          rounds: [makeRound({ id: 'round-1', status: 'running' }), makeRound({ id: 'round-2', status: 'done' })],
+        })],
+      }))
+
+      const snapshot = await client.downloadSnapshot()
+      const rounds = snapshot!.payload.agentConversations[0].rounds
+      expect(rounds.find((item) => item.id === 'round-1')!.status).toBe('error')
+      expect(rounds.find((item) => item.id === 'round-2')!.status).toBe('done')
+    } finally {
+      await platform.closeServer()
+    }
+  })
+
+  it('恢复时摘掉指向不存在图片的 Agent 图片引用与遮罩', async () => {
+    const platform = await startPlatform()
+    try {
+      const config = makeConfig(platform.origin)
+      configureBackup(config, createBackupClient(config))
+      await runBackupNow(makeSource({
+        images: ['image-a'],
+        agentConversations: [makeConversation({
+          rounds: [makeRound({
+            id: 'round-1',
+            inputImageIds: ['image-a', 'gone'],
+            maskImageId: 'gone-mask',
+            maskTargetImageId: 'gone',
+          })],
+          messages: [{
+            id: 'message-1', role: 'user', content: '画一只猫', roundId: 'round-1',
+            inputImageIds: ['image-a', 'gone'], createdAt: 1,
+          }],
+        })],
+      }))
+
+      const local = createMemoryStore()
+      let applied: { agentConversations: AgentConversation[] } | null = null
+      bindRestore(local, (payload) => { applied = payload as { agentConversations: AgentConversation[] } })
+      await runRestore()
+
+      const restoredRound = applied!.agentConversations[0].rounds[0]
+      expect(restoredRound.inputImageIds).toEqual(['image-a'])
+      expect(restoredRound.maskImageId).toBeNull()
+      expect(applied!.agentConversations[0].messages[0].inputImageIds).toEqual(['image-a'])
     } finally {
       await platform.closeServer()
     }

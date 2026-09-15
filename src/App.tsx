@@ -15,6 +15,7 @@ import DetailModal from './components/DetailModal'
 import Lightbox from './components/Lightbox'
 import SettingsModal from './components/SettingsModal'
 import ConfirmDialog from './components/ConfirmDialog'
+import MemberIdOnboardingModal from './components/MemberIdOnboardingModal'
 import Toast from './components/Toast'
 import MaskEditorModal from './components/MaskEditorModal'
 import ImageContextMenu from './components/ImageContextMenu'
@@ -152,6 +153,7 @@ export default function App() {
       <Lightbox />
       <SettingsModal />
       <ConfirmDialog />
+      <MemberIdOnboardingModal />
       <FavoriteCollectionPickerModal />
       <ManageCollectionsModal />
       <Toast />

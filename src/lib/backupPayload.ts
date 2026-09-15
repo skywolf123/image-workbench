@@ -101,3 +101,65 @@ function pickAvailableKeys<T>(map: Record<string, T>, availableImageIds: Set<str
   }
   return next
 }
+
+/**
+ * 把 Agent 会话里指向不存在图片的引用摘掉。
+ *
+ * Agent 的图片引用不经过任务，所以上面那份任务清理覆盖不到它们。备份与恢复都要过一遍：
+ * 备份时防止把空引用存上去，恢复时防止渲染出加载不出来的空图。
+ */
+export function dropDanglingAgentImageReferences(
+  conversations: AgentConversation[],
+  availableImageIds: Set<string>,
+): AgentConversation[] {
+  return conversations.map((conversation) => {
+    let changed = false
+    const rounds = conversation.rounds.map((round) => {
+      const inputImageIds = round.inputImageIds.filter((id) => availableImageIds.has(id))
+      const keepMaskImage = !round.maskImageId || availableImageIds.has(round.maskImageId)
+      const keepMaskTarget = !round.maskTargetImageId || availableImageIds.has(round.maskTargetImageId)
+      // 遮罩是「输入图 + 遮罩」成对使用的，摘掉输入图后遮罩也就没有意义了。
+      const keepMask = keepMaskImage && keepMaskTarget && inputImageIds.length > 0
+      if (
+        inputImageIds.length === round.inputImageIds.length &&
+        keepMask === Boolean(round.maskImageId)
+      ) return round
+      changed = true
+      return {
+        ...round,
+        inputImageIds,
+        ...(keepMask ? {} : { maskImageId: null, maskTargetImageId: null }),
+      }
+    })
+    if (!changed) return conversation
+    return {
+      ...conversation,
+      rounds,
+      messages: conversation.messages.map((message) => {
+        if (!message.inputImageIds?.length) return message
+        const inputImageIds = message.inputImageIds.filter((id) => availableImageIds.has(id))
+        return inputImageIds.length === message.inputImageIds.length ? message : { ...message, inputImageIds }
+      }),
+    }
+  })
+}
+
+/**
+ * 把备份中仍处于运行中的 Agent 轮次收尾。
+ *
+ * 轮次的进度只存在于当前这次页面会话里，一旦离开这台浏览器（备份）或重进页面（恢复），
+ * 它是死状态：界面会永远显示「正在生成回复」，Agent 的提交按钮也会一直卡在「停止生成」。
+ * 消息本身没问题，只是轮次没有终态，所以标成 error 即可。
+ */
+export function dropInterruptedAgentRounds(conversations: AgentConversation[]): AgentConversation[] {
+  return conversations.map((conversation) => {
+    if (!conversation.rounds.some((round) => round.status === 'running')) return conversation
+    const finishedAt = Date.now()
+    return {
+      ...conversation,
+      rounds: conversation.rounds.map((round) => round.status === 'running'
+        ? { ...round, status: 'error' as const, error: '请求中断（已从备份恢复）', finishedAt }
+        : round),
+    }
+  })
+}

@@ -1,6 +1,6 @@
 import type { AgentConversation, AppSettings, FavoriteCollection, StoredImage, TaskParams, TaskRecord } from '../types'
 import { bytesToDataUrl, dataUrlToBytes } from './dataUrl'
-import { createBackupPayload, dropDanglingImageReferences, type BackupPayload, type BackupSnapshot } from './backupPayload'
+import { createBackupPayload, dropDanglingAgentImageReferences, dropDanglingImageReferences, dropInterruptedAgentRounds, type BackupPayload, type BackupSnapshot } from './backupPayload'
 import type { BackupConfig } from './backupConfig'
 import { getPersistableAgentConversations } from './agentResponseState'
 import { createTaskErrorPatch } from './taskState'
@@ -31,12 +31,12 @@ export interface BackupSource {
 
 /** 恢复时写回本地的出口，由 store 提供，保证走与正常启动相同的归一化流程。 */
 export interface RestoreSink {
-  getExistingImageIds: () => Promise<Set<string>>
   putImage: (id: string, dataUrl: string) => Promise<void>
-  getExistingTaskIds: () => Promise<Set<string>>
-  /** 恢复写完之后，本地实际可用的图片 id（用于摘掉悬空引用）。 */
+  /** 清空本地数据：同步是用服务器数据替换本地，所以每次都要先清。 */
+  clearLocal: () => Promise<void>
+  /** 清空之后，本地实际可用的图片 id（用于摘掉悬空引用）。 */
   getAvailableImageIds: () => Promise<Set<string>>
-  /** 一次交回全部缺失任务：既落库，也让内存里的任务列表立刻可见。 */
+  /** 一次交回全部任务：既落库，也让内存里的任务列表立刻可见。 */
   putTasks: (tasks: TaskRecord[]) => Promise<void>
   applyPayload: (payload: BackupPayload) => Promise<void>
 }
@@ -138,8 +138,60 @@ export interface BackupClient {
   uploadSnapshot(snapshot: BackupSnapshot, expectedVersion: number | null): Promise<number>
 }
 
+let baseUrlOverride: string | null = null
+
+/** 只供测试：把客户端指向临时起的服务端（浏览器里没有 window 时无法推断地址）。 */
+export function setBackupBaseUrlForTests(url: string | null) {
+  baseUrlOverride = url
+}
+
+/**
+ * 备份服务的地址：即当前站点。
+ *
+ * 由部署决定，不是用户设置项——应用与备份服务是同一个 Node 进程、同一端口，
+ * 所以同源是必然的，界面上就不该有「服务器地址」这个输入框。
+ */
+export function resolveBackupBaseUrl() {
+  if (baseUrlOverride !== null) return baseUrlOverride
+  return typeof window === 'undefined' ? '' : window.location.origin
+}
+
+/** 只判断某个成员码在服务器上有没有记录，不拉取任何内容。 */
+export async function memberExistsOnServer(config: BackupConfig, fetchImpl: typeof fetch = fetch): Promise<boolean> {
+  if (!config.memberId) return false
+  const client = createBackupClient(config, fetchImpl)
+  const manifest = await withRetry(() => client.fetchManifest())
+  return manifest.images.length > 0 || manifest.state !== null
+}
+
+/**
+ * 探测这个地址上有没有平台服务端。
+ *
+ * 决定「要不要显示成员码与同步」：纯静态部署（GitHub Pages / Vercel / Cloudflare）下
+ * 这个请求会 404 或失败，备份那一整套 UI 就不该出现。所以要一个专门且**便宜**的端点：
+ * 不校验成员码、不读磁盘，只看这个进程在不在。
+ *
+ * 带超时：地址填错时不该让界面干等浏览器的默认超时。
+ */
+export async function probeBackupServer(fetchImpl: typeof fetch = fetch, timeoutMs = 5_000): Promise<boolean> {
+  const base = resolveBackupBaseUrl()
+  if (!base) return false
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetchImpl(`${base}/api/backup/ping`, { method: 'GET', signal: controller.signal })
+    if (!response.ok) return false
+    const body = await response.json() as { ok?: boolean }
+    return body?.ok === true
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export function createBackupClient(config: BackupConfig, fetchImpl: typeof fetch = fetch): BackupClient {
-  const base = config.serverUrl.replace(/\/+$/, '')
+  const base = resolveBackupBaseUrl()
   if (typeof fetchImpl !== 'function') throw new Error('当前环境不支持备份所需的网络请求接口。')
 
   async function request(path: string, init: RequestInit = {}) {
@@ -248,12 +300,12 @@ let snapshotTimer: ReturnType<typeof setTimeout> | null = null
 
 export function configureBackup(next: BackupConfig, nextClient?: BackupClient) {
   config = next
-  client = nextClient ?? (next.serverUrl && next.memberId ? createBackupClient(next) : null)
+  client = nextClient ?? (next.memberId ? createBackupClient(next) : null)
 }
 
-/** 只有开关打开、服务器地址与成员码都填了，备份才真正工作。 */
+/** 填了成员码备份就生效；服务器地址由部署决定，不是用户的前置条件。 */
 export function isBackupActive() {
-  return Boolean(config?.enabled && config.serverUrl && config.memberId && client)
+  return Boolean(config?.memberId && client)
 }
 
 export function bindBackupSources(sources: {
@@ -378,11 +430,20 @@ export async function runBackupNow(source?: BackupSource): Promise<BackupOutcome
       params: data.params,
       favoriteCollections: data.favoriteCollections,
       defaultFavoriteCollectionId: data.defaultFavoriteCollectionId,
-      agentConversations: getPersistableAgentConversations(data.agentConversations),
+      // 上传前把运行中的轮次收尾：它们出了这台浏览器就是死的，
+      // 与其把一个会永远转圈的状态存进备份，不如存成已中断。
+      agentConversations: dropInterruptedAgentRounds(
+        getPersistableAgentConversations(data.agentConversations),
+      ),
     })
     const manifest = await withRetry(() => client!.fetchManifest())
     const version = await withRetry(() => client!.uploadSnapshot(
-      { tasks: data.tasks, payload },
+      {
+        // 本地也可能存在悬空引用（图片被清理过），上传前按实际存在的图片过滤一遍，
+        // 免得把一个渲染不出内容的空任务备份上去。
+        tasks: dropDanglingImageReferences(data.tasks, new Set(data.images)),
+        payload,
+      },
       manifest.state?.version ?? null,
     ))
 
@@ -404,6 +465,14 @@ export async function runBackupNow(source?: BackupSource): Promise<BackupOutcome
 
 // ===== 恢复 =====
 
+/**
+ * 从服务器同步回本地。
+ *
+ * **同步只有这一条语义：用服务器上的数据替换本地。** 本地未备份的内容会丢失。
+ *
+ * 实现上先按服务器清单把所有图片下载到内存，全部成功后才清空本地再灌入，
+ * 所以中途失败（网络断了、服务器挂了）不会把本地清成半截状态。
+ */
 export interface RestoreOutcome {
   images: number
   tasks: number
@@ -412,60 +481,69 @@ export interface RestoreOutcome {
 /**
  * 从服务器同步回本地。
  *
- * 语义是**只补缺失、永不覆盖或删除本地已有数据**：图片 id 由内容决定，所以「填缺」
- * 天然幂等，重复执行完全无害。
+ * **同步只有这一条语义：用服务器上的数据替换本地。** 本地未备份的内容会丢失。
+ *
+ * 实现上先按服务器清单把所有图片下载到内存，全部成功后才清空本地再灌入，
+ * 所以中途失败（网络断了、服务器挂了）不会把本地清成半截状态。
  */
 export async function runRestore(): Promise<RestoreOutcome> {
   if (!isBackupActive() || !client || !restoreSink) {
     throw new Error('备份未启用，请先在备份标签页配置服务器地址与成员码。')
   }
   const sink = restoreSink
+  // 拉取期间先在内存里攒着，全部下载成功后再动本地——中途失败不会把本地清成半截状态。
+  const downloadedImages: Array<{ id: string; dataUrl: string }> = []
 
   setStatus({ running: true, error: null, message: '正在读取服务器备份清单…', done: 0, total: 0 })
   try {
     const manifest = await withRetry(() => client!.fetchManifest())
-    const existingImageIds = await sink.getExistingImageIds()
-    const missingImageIds = manifest.images.filter((id) => !existingImageIds.has(id))
-    setStatus({ total: missingImageIds.length, message: `正在恢复 ${missingImageIds.length} 张图片…` })
+    setStatus({ total: manifest.images.length, message: `正在下载 ${manifest.images.length} 张图片…` })
 
     let images = 0
-    for (const id of missingImageIds) {
+    for (const id of manifest.images) {
       const dataUrl = await withRetry(() => client!.downloadImage(id))
-      if (dataUrl) await sink.putImage(id, dataUrl)
+      if (dataUrl) downloadedImages.push({ id, dataUrl })
       images++
       setStatus({ done: images })
     }
 
-    let tasks = 0
     const snapshot = await withRetry(() => client!.downloadSnapshot())
+    const now = Date.now()
+    // 运行中的任务其队列/回调标识在恢复后已失效，必须标记为已中断，否则界面会一直转圈。
+    const restoredTasks = (snapshot?.tasks ?? []).map((task) => task.status === 'running'
+      ? { ...task, ...createTaskErrorPatch(task, '请求中断（已同步）', now), falRecoverable: false, customRecoverable: false }
+      : task)
+
+    setStatus({ message: '正在用服务器数据替换本地…' })
+    await sink.clearLocal()
+
+    for (const image of downloadedImages) await sink.putImage(image.id, image.dataUrl)
+
+    let tasks = 0
+    const availableImageIds = snapshot
+      ? await sink.getAvailableImageIds()
+      : new Set<string>()
+    let restoredConversations = snapshot?.payload.agentConversations ?? []
     if (snapshot) {
-      const existingTaskIds = await sink.getExistingTaskIds()
-      const now = Date.now()
-      // 运行中的任务其队列/回调标识在恢复后已失效，必须标记为已中断，否则界面会一直转圈。
-      const restoredTasks = (snapshot.tasks ?? [])
-        .filter((task) => !existingTaskIds.has(task.id))
-        .map((task) => task.status === 'running'
-          ? { ...task, ...createTaskErrorPatch(task, '请求中断（已从备份恢复）', now), falRecoverable: false, customRecoverable: false }
-          : task)
-      // 一致性处理：摘掉指向不存在图片的引用，避免恢复后出现渲染不出内容的空任务。
-      const availableImageIds = await sink.getAvailableImageIds()
-      const missingTasks = dropDanglingImageReferences(restoredTasks, availableImageIds)
-      await sink.putTasks(missingTasks)
-      tasks = missingTasks.length
-      setStatus({ message: '正在恢复设置与会话…' })
+      // 一致性处理：摘掉指向不存在图片的引用，避免同步后出现渲染不出内容的空任务。
+      const syncedTasks = dropDanglingImageReferences(restoredTasks, availableImageIds)
+      await sink.putTasks(syncedTasks)
+      tasks = syncedTasks.length
+      restoredConversations = dropDanglingAgentImageReferences(restoredConversations, availableImageIds)
+      setStatus({ message: '正在同步设置与会话…' })
       // 状态数据走与正常启动相同的归一化流程，避免旧版本备份把应用弄坏。
-      await sink.applyPayload(snapshot.payload)
+      await sink.applyPayload({ ...snapshot.payload, agentConversations: restoredConversations })
     }
 
     setStatus({
       running: false,
       error: null,
-      message: `恢复完成：${images} 张图片、${tasks} 个任务`,
+      message: `同步完成：${images} 张图片、${tasks} 个任务`,
       lastSuccessAt: Date.now(),
     })
     return { images, tasks }
   } catch (error) {
-    const message = `恢复失败：${describeError(error)}`
+    const message = `同步失败：${describeError(error)}`
     setStatus({ running: false, message: null, error: message })
     notify?.(message, 'error')
     throw error

@@ -222,6 +222,31 @@ describe('平台服务：静态托管与运行期注入', () => {
     }
   })
 
+  it('配置了平台 Key 时自动打开平台模式，不需要额外声明', async () => {
+    const dist = makeDist()
+    writeFileSync(join(dist, 'assets', 'mode.js'), 'const m="__VITE_PLATFORM_MODE_PLACEHOLDER__";')
+    const platform = await startPlatform({ distDir: dist, apiKey: 'platform-secret-key' })
+
+    try {
+      // 有 Key 就说明这个部署在替用户出 Key，界面该隐藏 Key 字段。
+      expect(readFileSync(join(dist, 'assets', 'mode.js'), 'utf-8')).toContain('const m="true"')
+    } finally {
+      await platform.close()
+    }
+  })
+
+  it('没配置平台 Key 时不进入平台模式，前端仍由用户自己填', async () => {
+    const dist = makeDist()
+    writeFileSync(join(dist, 'assets', 'mode.js'), 'const m="__VITE_PLATFORM_MODE_PLACEHOLDER__";')
+    const platform = await startPlatform({ distDir: dist, apiKey: null })
+
+    try {
+      expect(readFileSync(join(dist, 'assets', 'mode.js'), 'utf-8')).toContain('const m="false"')
+    } finally {
+      await platform.close()
+    }
+  })
+
   it('启动时把构建产物里的占位符替换成运行期取值', async () => {
     const dist = makeDist()
     const platform = await startPlatform({ distDir: dist, env: { DEFAULT_API_URL: 'https://preset.example.com/v1' } })
@@ -329,6 +354,17 @@ describe('备份 blob 仓库', () => {
 
       expect(firstUse.status).toBe(201)
       expect(existsSync(join(platform.config.dataDir, 'brand-new-member', 'images', 'fi'))).toBe(true)
+    } finally {
+      await platform.close()
+    }
+  })
+
+  it('ping 不需要成员码，用于纯静态/平台部署的能力探测', async () => {
+    const platform = await startPlatform()
+    try {
+      const response = await fetch(`${platform.origin}/api/backup/ping`)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ ok: true })
     } finally {
       await platform.close()
     }
