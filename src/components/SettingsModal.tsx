@@ -60,6 +60,7 @@ import { TooltipButton } from './TooltipButton'
 import GeneralSettingsTab from './settings/GeneralSettingsTab'
 import AgentSettingsTab from './settings/AgentSettingsTab'
 import BackupSettingsTab from './settings/BackupSettingsTab'
+import { hasBackupServer, isBackupServerProbed, resetBackupServerProbe, subscribeBackupServerProbe } from '../lib/backupBridge'
 import CustomProviderModal from './settings/CustomProviderModal'
 import ProfileImportUrlModal, { type CopyImportUrlOptions } from './settings/ProfileImportUrlModal'
 import ZipDownloadRouteModal, { ZIP_DOWNLOAD_ROUTE_OPTIONS } from './settings/ZipDownloadRouteModal'
@@ -195,6 +196,9 @@ export default function SettingsModal() {
   const [profileImportUrlTooltipVisible, setProfileImportUrlTooltipVisible] = useState(false)
   const [duplicateProfileTooltipVisible, setDuplicateProfileTooltipVisible] = useState(false)
   const [activeTab, setActiveTab] = useState<SettingsTab>('api')
+  // 有没有备份服务端决定「备份」标签出不出现；探测是异步的，所以订阅它的结果。
+  const [backupServerProbed, setBackupServerProbed] = useState(() => isBackupServerProbed())
+  const [backupServerAvailable, setBackupServerAvailable] = useState(() => hasBackupServer())
   const [exportConfig, setExportConfig] = useState(true)
   const [exportTasks, setExportTasks] = useState(true)
   const [importConfig, setImportConfig] = useState(true)
@@ -352,6 +356,19 @@ export default function SettingsModal() {
   useEffect(() => {
     if (showSettings && settingsTabRequest) setActiveTab(settingsTabRequest)
   }, [settingsTabRequest, showSettings])
+  useEffect(() => subscribeBackupServerProbe(() => {
+    setBackupServerProbed(isBackupServerProbed())
+    setBackupServerAvailable(hasBackupServer())
+  }), [])
+
+  // 打开设置窗口时重探一次：用户可能刚改过服务器地址。
+  useEffect(() => {
+    if (!showSettings) return
+    resetBackupServerProbe()
+    setBackupServerProbed(false)
+    setBackupServerAvailable(false)
+  }, [showSettings])
+
 
   const updateProfileMenuMaxHeight = useCallback(() => {
     if (!profileMenuTriggerRef.current) return
@@ -656,6 +673,9 @@ export default function SettingsModal() {
   usePreventBackgroundScroll(showSettings, showZipDownloadRouteManager ? zipDownloadRouteScrollBoundaryRef : showCustomProviderImport ? customProviderScrollBoundaryRef : settingsScrollBoundaryRef)
 
   if (!showSettings) return null
+  // 探测未完成、或这个部署根本没有备份服务端时，都别停在「备份」标签上（标签本身也不渲染）。
+  const showBackupTab = backupServerProbed && backupServerAvailable
+  const effectiveTab = activeTab === 'backup' && !showBackupTab ? 'api' : activeTab
 
   const handleExport = async () => {
     if (exportTasks && hasRunningOperations) {
@@ -1191,6 +1211,7 @@ export default function SettingsModal() {
                 </svg>
                 数据管理
               </button>
+              {showBackupTab && (
               <button
                 onClick={() => setActiveTab('backup')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'backup' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1200,6 +1221,7 @@ export default function SettingsModal() {
                 </svg>
                 备份
               </button>
+              )}
               <button
                 onClick={() => setActiveTab('about')}
                 className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'about' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
@@ -1240,7 +1262,7 @@ export default function SettingsModal() {
               />
             )}
 
-            {activeTab === 'backup' && <BackupSettingsTab />}
+            {effectiveTab === 'backup' && <BackupSettingsTab />}
 
             {activeTab === 'api' && (
               <div className="space-y-4">
@@ -1975,34 +1997,11 @@ export default function SettingsModal() {
                   </p>
                 </a>
 
-                <p className="mt-8 mb-6 max-w-[360px] text-center text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">
-                  已内置提示词模板
+                <p className="mt-8 mb-4 max-w-[380px] text-center text-[12px] leading-relaxed text-gray-400 dark:text-gray-500">
+                  基于开源项目 GPT Image Playground 与 GPT Image Studio 二次开发。
+                  <br />
+                  感谢原作者与所有提示词模板贡献者。
                 </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <a
-                    href="https://qm.qq.com/q/ln5SLYxBjW"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gray-100/80 px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-200 hover:text-gray-900 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.1] dark:hover:text-white"
-                  >
-                    <svg className="h-4 w-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                    交流群
-                  </a>
-                  <a
-                    href="https://blog.88lin.eu.org/coffee"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gray-100/80 px-5 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-200 hover:text-gray-900 dark:bg-white/[0.06] dark:text-gray-300 dark:hover:bg-white/[0.1] dark:hover:text-white"
-                  >
-                    <svg className="h-4 w-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    赞助作者
-                  </a>
-                </div>
               </div>
             )}
           </div>

@@ -15,12 +15,29 @@ const PREVENT_PRESET_CONFIG_DELETION = readRuntimeEnv(import.meta.env.VITE_PREVE
  */
 const PLATFORM_MODE = readRuntimeEnv(import.meta.env.VITE_PLATFORM_MODE) === 'true'
 
+let platformModeOverride: boolean | null = null
+
+/** 只供测试覆盖，让不经过构建期开关的用例也能验证平台模式分支。 */
+export function setPlatformModeForTests(value: boolean | null) {
+  platformModeOverride = value
+}
+
 /**
  * 平台模式的唯一出口。其余代码只读这个函数，不各自判断环境变量，回退路径只需要在这一处验证。
- * 平台模式在上游锁定机制上叠加一档更强的锁定，而不是与之并行的第二套体系。
+ * 平台模式在上游锁定机制上叠加一档更硬的锁定，而不是与之并行的第二套体系。
  */
 export function isPlatformMode() {
-  return PLATFORM_MODE
+  return platformModeOverride ?? PLATFORM_MODE
+}
+
+/**
+ * 这份配置能不能直接拿去发请求。
+ *
+ * 非平台模式下要求用户填过 Key，否则提交按钮会引导去设置页；平台模式下 Key 由服务端在
+ * 代理时注入，前端恒为空，再按 Key 判断就会永远认为「未配置」而挡住生成。
+ */
+export function hasUsableApiConfig(profile: Pick<ApiProfile, 'apiKey'>) {
+  return isPlatformMode() || Boolean(profile.apiKey)
 }
 
 let presetProfiles: ApiProfile[] = []
@@ -165,6 +182,6 @@ export function enforcePresetConfigPolicy(
 }
 
 function stripDeploymentApiKeys(profiles: ApiProfile[]) {
-  if (!PLATFORM_MODE) return profiles
+  if (!isPlatformMode()) return profiles
   return profiles.map((profile) => (profile.apiKey ? { ...profile, apiKey: '' } : profile))
 }
