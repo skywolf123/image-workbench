@@ -1,7 +1,7 @@
 {
-  "name": "GPT Image 2",
-  "short_name": "GPT Image 2",
-  "description": "GPT Image 2 图像生成、编辑与提示词工作台",
+  "name": "Image Workbench",
+  "short_name": "Image Workbench",
+  "description": "可自部署的图片生成工作台，平台统一提供 API Key，支持自动备份到你的服务器",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

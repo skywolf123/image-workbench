@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const REPO = '88lin/gpt-image-studio'
+const REPO = 'skywolf123/image-workbench'
 const API_URL = `https://api.github.com/repos/${REPO}/releases/latest`
 
 function compareVersions(a: string, b: string) {

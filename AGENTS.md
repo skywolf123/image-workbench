@@ -1,4 +1,4 @@
-# Agent Instructions for gpt-image-studio
+# Agent Instructions for image-workbench
 
 本文件定义 AI 编码助手在此仓库中应遵循的工作方式。
 
