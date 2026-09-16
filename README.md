@@ -13,7 +13,7 @@
 > [!NOTE]
 > 本项目是 [88lin/gpt-image-studio](https://github.com/88lin/gpt-image-studio) 的二次开发版本。
 > 完整继承其全部功能，并在此基础上增加了**后端兜底配置**与**自动备份**两项能力。
-> 同时也保留了纯静态部署（GitHub Pages / Vercel / Cloudflare）的完整能力，此时行为与原版一致。
+> 同时也保留了纯静态部署（如 Cloudflare Workers）的完整能力，此时行为与原版一致。
 
 ---
 
@@ -300,13 +300,7 @@ docker run -d --name image-workbench \
 
 不部署 Node 服务时，本项目行为与 `88lin/gpt-image-studio` 完全一致：用户自己在设置页填写 API Key，数据只存在浏览器本地。备份相关的界面会自动隐藏，后端兜底也不参与（没有服务端可以承接代理）。
 
-支持 Vercel、GitHub Pages、Cloudflare Workers，工作流文件均已内置。
-
-纯静态部署下，两个前端开关仍可在**构建前**通过 `VITE_` 变量注入：`VITE_HIDE_API_SETTINGS`、`VITE_LOCK_PRESET_KEY`。但它们只改变界面形态，没有后端提供 Key 时锁住 Key 会导致无人可用的配置——纯静态部署建议不要开启。
-
-**Vercel**：在项目 **Settings → Environment Variables** 中设置 `VITE_DEFAULT_API_URL`，导入仓库即可。
-
-**GitHub Pages**：在仓库 **Settings → Pages** 中将 Source 设为 **GitHub Actions**，然后在 **Actions** 里手动触发 **Deploy to GitHub Pages**。
+纯静态部署不需要任何仓库内的配置文件：把 `dist/` 交给任意静态托管即可。前端开关仍可在**构建前**通过 `VITE_` 变量注入：`VITE_HIDE_API_SETTINGS`、`VITE_LOCK_PRESET_KEY`。但它们只改变界面形态，没有后端提供 Key 时锁住 Key 会导致无人可用的配置——纯静态部署建议不要开启。
 
 **Cloudflare Workers**：修改 `wrangler.jsonc` 中的 `name` 后在本地执行构建与部署。Cloudflare 不会在部署后改写静态文件，因此必须**在构建前**设置 `VITE_DEFAULT_API_URL`。
 
