@@ -15,6 +15,7 @@
  */
 
 import http from 'node:http'
+import https from 'node:https'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createReadStream } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
@@ -278,7 +279,12 @@ function buildUpstreamTarget(apiUrl, reqUrl) {
   const rest = reqUrl.slice(PROXY_PREFIX.length + 1)
   if (!rest) return { error: 'API 代理路径不能为空' }
   try {
-    return { target: new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`) }
+    const target = new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`)
+    // 只支持 http/https：其他协议交给对应模块时会抛同步异常。
+    if (target.protocol !== 'https:' && target.protocol !== 'http:') {
+      return { error: `API_PROXY_URL 的协议不受支持：${target.protocol}。请填写 http:// 或 https:// 开头的地址。` }
+    }
+    return { target }
   } catch {
     return { error: `代理未配置可用的上游地址，无法转发请求。请为服务端设置 API_PROXY_URL 后重启。（当前值：${apiUrl || '空'}）` }
   }
@@ -338,7 +344,10 @@ function handleProxy(req, res, config) {
     return
   }
 
-  const upstream = http.request(
+  // 上游多是 https，node:http 的 request 遇到 https 协议会同步抛 ERR_INVALID_PROTOCOL，
+  // 而同步异常接不到下面的 'error' 事件上，会直接把进程带崩，所以必须先按协议选模块。
+  const transport = target.protocol === 'https:' ? https : http
+  const upstream = transport.request(
     {
       protocol: target.protocol,
       hostname: target.hostname,
@@ -519,7 +528,13 @@ export async function createServer(options = {}) {
   const server = http.createServer((req, res) => {
     const urlPath = req.url.split('?')[0]
     if (urlPath === PROXY_PREFIX || urlPath.startsWith(`${PROXY_PREFIX}/`)) {
-      handleProxy(req, res, config)
+      // 兜住同步异常：代理出一个错不该把整个进程带走，其他请求还得继续服务。
+      try {
+        handleProxy(req, res, config)
+      } catch (error) {
+        console.error('[proxy] 请求处理失败：', error)
+        if (!res.headersSent) sendError(res, 502, `API 代理处理失败：${error.message}`, 'proxy_internal_error')
+      }
       return
     }
     if (urlPath === BACKUP_PREFIX || urlPath.startsWith(`${BACKUP_PREFIX}/`)) {

@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import http from 'node:http'
+import https from 'node:https'
+import { execFileSync } from 'node:child_process'
+import { readFileSync as readFile } from 'node:fs'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -42,6 +45,37 @@ async function startUpstream(handler) {
   return {
     received,
     origin: `http://127.0.0.1:${server.address().port}`,
+    close: () => new Promise((resolve) => server.close(resolve)),
+  }
+}
+
+/** HTTPS 上游替身：用自签证书起一个 https 服务，验证代理会按协议选传输模块。 */
+async function startHttpsUpstream(handler) {
+  const received = []
+  const keyPath = join(makeTempDir('server-tls-'), 'key.pem')
+  const certPath = join(makeTempDir('server-tls-'), 'cert.pem')
+  execFileSync('openssl', [
+    'req', '-x509', '-newkey', 'rsa:2048', '-nodes',
+    '-keyout', keyPath, '-out', certPath,
+    '-days', '1', '-subj', '/CN=127.0.0.1',
+  ], { stdio: 'ignore' })
+
+  const server = https.createServer(
+    { key: readFile(keyPath), cert: readFile(certPath) },
+    (req, res) => {
+      const chunks = []
+      req.on('data', (chunk) => chunks.push(chunk))
+      req.on('end', () => {
+        received.push({ method: req.method, url: req.url, headers: req.headers, body: Buffer.concat(chunks) })
+        handler(req, res, received[received.length - 1])
+      })
+    },
+  )
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  return {
+    received,
+    certPath,
+    origin: `https://127.0.0.1:${server.address().port}`,
     close: () => new Promise((resolve) => server.close(resolve)),
   }
 }
@@ -563,6 +597,49 @@ describe('服务端：后端持有地址与 Key 的取值优先级', () => {
     } finally {
       await fromEnv.close()
       await fromFile.close()
+    }
+  })
+})
+
+describe('服务端：代理按协议选传输模块', () => {
+  it('上游是 https 时用 https 模块发起请求，而不是同步抛异常', async () => {
+    // 此前固定用 node:http 的 request，遇到 https 会同步抛
+    // ERR_INVALID_PROTOCOL；同步异常接不到 'error' 事件上，进程会被直接带崩。
+    // 这里用自签证书，预期的失败是 TLS 校验失败（502），而不是进程死掉。
+    const upstream = await startHttpsUpstream((req, res) => res.end('{}'))
+    const platform = await startPlatform({ apiUrl: `${upstream.origin}/v1` })
+
+    try {
+      const response = await fetch(`${platform.origin}/api-proxy/images/generations`, { method: 'POST', body: '{}' })
+
+      expect(response.status).toBe(502)
+      const body = await response.json()
+      expect(body.error.type).toBe('upstream_unreachable')
+      // 走到 TLS 校验才失败，说明确实是用 https 模块发的请求，
+      // 而不是在构造 ClientRequest 时就抛 ERR_INVALID_PROTOCOL。
+      expect(body.error.message).toMatch(/certificate|self.signed/i)
+
+      // 关键：这条请求之后进程仍活着，能继续服务。
+      const alive = await fetch(`${platform.origin}/api/backup/ping`)
+      expect(alive.status).toBe(200)
+    } finally {
+      await platform.close()
+      await upstream.close()
+    }
+  })
+
+  it('上游地址有误时返回 502，进程继续服务其他请求', async () => {
+    const platform = await startPlatform({ apiUrl: 'ftp://bad.example.com/v1' })
+
+    try {
+      const first = await fetch(`${platform.origin}/api-proxy/images/generations`, { method: 'POST', body: '{}' })
+      expect(first.status).toBe(503)
+
+      // 关键：一次坏请求之后，进程仍然活着并能响应新请求。
+      const second = await fetch(`${platform.origin}/api/backup/ping`)
+      expect(second.status).toBe(200)
+    } finally {
+      await platform.close()
     }
   })
 })
