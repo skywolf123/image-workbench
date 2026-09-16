@@ -17,7 +17,7 @@ ENV VITE_BACKEND_FALLBACK=__VITE_BACKEND_FALLBACK_PLACEHOLDER__
 
 # corepack 让镜像里的 pnpm 版本跟着 package.json 的 packageManager 走。
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
