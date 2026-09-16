@@ -1,20 +1,8 @@
 import { useState, useEffect } from 'react'
+import { compareVersions } from '../lib/versionCompare'
 
 const REPO = 'skywolf123/image-workbench'
 const API_URL = `https://api.github.com/repos/${REPO}/releases/latest`
-
-function compareVersions(a: string, b: string) {
-  const aParts = a.split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const bParts = b.split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const length = Math.max(aParts.length, bParts.length)
-
-  for (let i = 0; i < length; i += 1) {
-    const diff = (aParts[i] ?? 0) - (bParts[i] ?? 0)
-    if (diff !== 0) return diff
-  }
-
-  return 0
-}
 
 export interface LatestRelease {
   tag: string

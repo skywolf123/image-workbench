@@ -2,7 +2,7 @@
   "name": "image-workbench",
   "private": true,
   "packageManager": "pnpm@11.7.0",
-  "version": "0.7.12-iw01",
+  "version": "0.7.12-iw02",
   "type": "module",
   "scripts": {
     "dev": "vite",

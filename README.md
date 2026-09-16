@@ -596,8 +596,8 @@ docker run -d --name image-workbench \
 
 本项目基于 [MIT License](LICENSE) 开源。
 
-原始项目：[CookSleep/gpt_image_playground](https://github.com/CookSleep/gpt_image_playground) — Copyright (c) CookSleep
-二次开发：[88lin/gpt-image-studio](https://github.com/88lin/gpt-image-studio) — Copyright (c) 2026 88lin
-本 fork：[skywolf123/image-workbench](https://github.com/skywolf123/image-workbench)
+> 原始项目：[CookSleep/gpt_image_playground](https://github.com/CookSleep/gpt_image_playground) — Copyright (c) CookSleep
+> 二次开发：[88lin/gpt-image-studio](https://github.com/88lin/gpt-image-studio) — Copyright (c) 2026 88lin
+> 本 fork：[skywolf123/image-workbench](https://github.com/skywolf123/image-workbench) — Copyright (c) 2026 skywolf123
 
 感谢以上作者与所有提示词模板贡献者。

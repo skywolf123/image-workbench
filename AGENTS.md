@@ -164,11 +164,12 @@ else params = baseParams
   - 每项使用 `- ` 开头，以完整中文句子概括用户可感知的结果，句末使用中文句号。
   - 相关 PR 或 Issue 编号放在条目末尾，格式为 `（PR #42）` 或 `（Issue #42）`，与已有发布记录保持一致。
   - 外部贡献在 `### 贡献` 中使用 `- @用户名 通过 PR #编号 贡献了……，特此感谢。` 格式致谢。
+- 版本号形如 `0.7.12-iw02`：前半是所基于的上游版本，后半是本 fork 的发布序号。上游发布新版本时前半跟着走，本项目自己的改动则递增序号。
 - 提升版本号时必须同步更新以下位置：
   - `package.json` 的 `version`。
-  - `package-lock.json` 顶层及根包的 `version`。
   - `public/sw.js` 的 `CACHE_NAME` 版本，确保旧缓存能够在 Service Worker 激活时清理。
   - `RELEASE.md` 标题中的版本号和日期。
+- `pnpm-lock.yaml` 不记录根包版本，无需同步（此前 AGENTS.md 写的 `package-lock.json` 已随 npm 一并移除）。
 - 更新后全局搜索旧版本号，确认没有遗漏仍需同步的位置；历史发布记录中的旧版本号不需要修改。
 - 发布前运行 `pnpm run build` 和 `pnpm test`，并复查最终差异。
 
