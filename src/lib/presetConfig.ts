@@ -5,39 +5,33 @@ const RAW_SHOW_PRESET_CONFIG_ONLY = readRuntimeEnv(import.meta.env.VITE_SHOW_PRE
 const SHOW_PRESET_CONFIG_ONLY = (RAW_SHOW_PRESET_CONFIG_ONLY || readRuntimeEnv(import.meta.env.VITE_SHOW_DEFAULT_CONFIG_ONLY)) === 'true'
 const LOCK_PRESET_CONFIG_PARAMS = readRuntimeEnv(import.meta.env.VITE_LOCK_PRESET_CONFIG_PARAMS) === 'true'
 const PREVENT_PRESET_CONFIG_DELETION = readRuntimeEnv(import.meta.env.VITE_PREVENT_PRESET_CONFIG_DELETION) === 'true'
+const LOCK_PRESET_KEY = readRuntimeEnv(import.meta.env.VITE_LOCK_PRESET_KEY) === 'true'
+const HIDE_API_SETTINGS = readRuntimeEnv(import.meta.env.VITE_HIDE_API_SETTINGS) === 'true'
+const BACKEND_FALLBACK = readRuntimeEnv(import.meta.env.VITE_BACKEND_FALLBACK) === 'true'
 
-/**
- * 平台模式的构建期开关。
- *
- * 它只决定界面的形态（隐藏哪些字段、放宽哪些校验），不承载平台配置本身的数据——
- * 上游地址与模型仍走预置配置 JSON，平台 Key 只存在于服务端进程里。因此它不违反
- * 「同一份构建产物支持两种部署形态」这条约束。
- */
-const PLATFORM_MODE = readRuntimeEnv(import.meta.env.VITE_PLATFORM_MODE) === 'true'
-
-let platformModeOverride: boolean | null = null
-
-/** 只供测试覆盖，让不经过构建期开关的用例也能验证平台模式分支。 */
-export function setPlatformModeForTests(value: boolean | null) {
-  platformModeOverride = value
+/** 隐藏整个 API 配置页，让用户没有前端配置的入口。 */
+export function isApiSettingsHidden() {
+  return HIDE_API_SETTINGS
 }
 
 /**
- * 平台模式的唯一出口。其余代码只读这个函数，不各自判断环境变量，回退路径只需要在这一处验证。
- * 平台模式在上游锁定机制上叠加一档更硬的锁定，而不是与之并行的第二套体系。
+ * 部署端在后端持有 Key 时置真。
+ *
+ * 前端据此放宽「必须填 Key」的校验：用户不填不是漏了，而是本来就该由后端在代理时补上。
+ * 它不参与任何锁定——前端自己配了 Key 依然优先。
  */
-export function isPlatformMode() {
-  return platformModeOverride ?? PLATFORM_MODE
+export function hasBackendFallback() {
+  return BACKEND_FALLBACK
 }
 
 /**
  * 这份配置能不能直接拿去发请求。
  *
- * 非平台模式下要求用户填过 Key，否则提交按钮会引导去设置页；平台模式下 Key 由服务端在
- * 代理时注入，前端恒为空，再按 Key 判断就会永远认为「未配置」而挡住生成。
+ * 用户填过 Key 就算可用；没填时，若部署端在后端持有 Key 也不该拦——请求经代理时后端会
+ * 补上，前端再按「必须填 Key」判断就会永远挡住生成。
  */
 export function hasUsableApiConfig(profile: Pick<ApiProfile, 'apiKey'>) {
-  return isPlatformMode() || Boolean(profile.apiKey)
+  return BACKEND_FALLBACK || Boolean(profile.apiKey)
 }
 
 let presetProfiles: ApiProfile[] = []
@@ -96,15 +90,25 @@ export function isPresetProvider(id: string) {
 }
 
 export function isPresetConfigOnlyEnabled() {
-  return (SHOW_PRESET_CONFIG_ONLY || PLATFORM_MODE) && presetProfiles.length > 0
+  return SHOW_PRESET_CONFIG_ONLY && presetProfiles.length > 0
 }
 
 export function isPresetConfigParamsLocked() {
-  return (LOCK_PRESET_CONFIG_PARAMS || PLATFORM_MODE) && presetProfiles.length > 0
+  return LOCK_PRESET_CONFIG_PARAMS && presetProfiles.length > 0
 }
 
 export function isPresetConfigDeletionPrevented() {
-  return (PREVENT_PRESET_CONFIG_DELETION || SHOW_PRESET_CONFIG_ONLY || PLATFORM_MODE) && presetProfiles.length > 0
+  return (PREVENT_PRESET_CONFIG_DELETION || SHOW_PRESET_CONFIG_ONLY) && presetProfiles.length > 0
+}
+
+/**
+ * API Key 是否被部署端锁住。
+ *
+ * 与 isPresetProfileLocked 是一对互补的开关：那个锁住除 Key 外的全部参数，这个只锁 Key。
+ * 两者都只作用于预置配置——用户自己新建的配置不受影响。
+ */
+export function isPresetKeyLocked(id: string) {
+  return LOCK_PRESET_KEY && isPresetProfile(id)
 }
 
 export function isPresetProfileLocked(id: string) {
@@ -138,7 +142,9 @@ export function enforcePresetConfigPolicy(
     if (!preset) return profile.isDefault ? { ...profile, isDefault: undefined } : profile
     return {
       ...(paramsLocked ? preset : profile),
-      apiKey: profile.apiKey,
+      // 锁住 Key 时清空本地值：这不是「保留用户的 Key」，而是宣布前端的 Key 不作数，
+      // 让请求落到后端持有的 Key 上。
+      apiKey: isPresetKeyLocked(profile.id) ? '' : profile.apiKey,
       provider: paramsLocked || presetConfigOnly ? preset.provider : profile.provider,
       isDefault: profile.id === defaultPresetProfileId ? true : undefined,
     }
@@ -165,23 +171,16 @@ export function enforcePresetConfigPolicy(
   const agentImageProfileId = presetConfigOnly && (!settings.agentImageProfileId || !profileIds.has(settings.agentImageProfileId))
     ? defaultPresetProfileId ?? presetProfiles[0]?.id ?? null
     : settings.agentImageProfileId
-  // 深度防御：平台模式下 Key 只应存在于服务端进程，预置配置里即便被人为塞入也会在这里被清空。
-  const nextProfiles = stripDeploymentApiKeys(profiles)
-  const active = nextProfiles.find((profile) => profile.id === activeProfileId)
+  const active = profiles.find((profile) => profile.id === activeProfileId)
 
   return {
     ...settings,
-    // 顶层字段是旧版单配置的兼容层，实际请求以 active profile 为准，两者必须一起清。
+    // 顶层字段是旧版单配置的兼容层，实际请求以 active profile 为准，两者必须一起走。
     apiKey: active ? active.apiKey : settings.apiKey,
     customProviders,
-    profiles: nextProfiles,
+    profiles,
     activeProfileId,
     agentTextProfileId,
     agentImageProfileId,
   }
-}
-
-function stripDeploymentApiKeys(profiles: ApiProfile[]) {
-  if (!isPlatformMode()) return profiles
-  return profiles.map((profile) => (profile.apiKey ? { ...profile, apiKey: '' } : profile))
 }

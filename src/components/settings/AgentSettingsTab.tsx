@@ -19,6 +19,8 @@ interface AgentSettingsTabProps {
   agentImageProfileOptions: SelectOption[]
   selectedAgentTextProfile: ApiProfile | null
   selectedAgentImageProfile: ApiProfile | null
+  /** 选择范围只剩一条时禁用选择器：隐藏 API 配置页后的常态。 */
+  profileSelectDisabled?: boolean
   setAgentMaxToolRoundsInput: (value: string) => void
   updateAgentApiConfigMode: (mode: AgentApiConfigMode) => void
   commitSettings: (nextDraft: AppSettings) => void
@@ -32,6 +34,7 @@ export default function AgentSettingsTab({
   agentImageProfileOptions,
   selectedAgentTextProfile,
   selectedAgentImageProfile,
+  profileSelectDisabled = false,
   setAgentMaxToolRoundsInput,
   updateAgentApiConfigMode,
   commitSettings,
@@ -72,6 +75,7 @@ export default function AgentSettingsTab({
                     value={selectedAgentTextProfile?.id ?? '请选择配置'}
                     onChange={(value) => commitSettings({ ...draft, agentTextProfileId: String(value) })}
                     options={agentTextProfileOptions}
+                    disabled={profileSelectDisabled}
                     showValueTooltips
                     className="w-full px-3 py-1.5 rounded-xl border border-gray-200/60 dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06] text-xs transition-all duration-200 shadow-sm text-gray-700 dark:text-gray-200 outline-none"
                   />
@@ -97,6 +101,7 @@ export default function AgentSettingsTab({
                       value={selectedAgentImageProfile?.id ?? '请选择配置'}
                       onChange={(value) => commitSettings({ ...draft, agentImageProfileId: String(value) })}
                       options={agentImageProfileOptions}
+                      disabled={profileSelectDisabled}
                       showValueTooltips
                       className="w-full px-3 py-1.5 rounded-xl border border-gray-200/60 dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06] text-xs transition-all duration-200 shadow-sm text-gray-700 dark:text-gray-200 outline-none"
                     />

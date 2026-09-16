@@ -8,7 +8,6 @@ import {
   resetBackupServerProbe,
 } from './backupBridge'
 import { DEFAULT_BACKUP_CONFIG, readBackupConfig } from './backupConfig'
-import { setPlatformModeForTests } from './presetConfig'
 
 // backupBridge 会把 store 与存储层一起拖进来，这里只验证引导与探测这两层的可观察行为。
 vi.mock('../store', () => ({
@@ -54,13 +53,11 @@ function stubServerReachable(reachable: boolean) {
 beforeEach(() => {
   installMemoryStorage()
   vi.stubGlobal('window', { location: { origin: 'http://nas.local:3000' }, crypto: globalThis.crypto })
-  setPlatformModeForTests(true)
   resetBackupServerProbe()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  setPlatformModeForTests(null)
   resetBackupServerProbe()
 })
 

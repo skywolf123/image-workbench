@@ -467,7 +467,7 @@ export default function InputBar() {
       ? settings
       : normalizeSettings({ ...settings, activeProfileId: activeProfile.id })
   ), [activeProfile.id, settingsActiveProfile.id, settings])
-  // 平台模式下 Key 由服务端在代理时注入，前端恒为空，这里不能再把它当作「未配置」。
+  // 部署端在后端持有 Key 时前端可能本来就是空的，这里不能再把它当作「未配置」。
   const hasSubmitApiConfig = hasUsableApiConfig(activeProfile)
   const canSubmit = Boolean(prompt.trim() && hasSubmitApiConfig && !activeAgentIsRunning)
   const submitButtonAriaLabel = activeAgentIsRunning

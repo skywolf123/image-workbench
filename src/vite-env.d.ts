@@ -13,7 +13,9 @@ interface ImportMetaEnv {
   readonly VITE_LOCK_PRESET_CONFIG_PARAMS?: string
   readonly VITE_PREVENT_PRESET_CONFIG_DELETION?: string
   readonly VITE_SHOW_DEFAULT_CONFIG_ONLY?: string
-  readonly VITE_PLATFORM_MODE?: string
+  readonly VITE_LOCK_PRESET_KEY?: string
+  readonly VITE_HIDE_API_SETTINGS?: string
+  readonly VITE_BACKEND_FALLBACK?: string
 }
 
 interface ImportMeta {
