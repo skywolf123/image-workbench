@@ -5,7 +5,7 @@ import { useStore } from '../store'
 import { adoptMemberId, createMemberId, needsMemberIdOnboarding, subscribeBackupServerProbe } from '../lib/backupBridge'
 
 /**
- * 平台模式下首次打开时的成员码引导。
+ * 首次打开时的成员码引导。
  *
  * 成员码是这台设备在服务器上的数据空间名字，需要用户看到并告知同组成员，所以在这里
  * **展示**而不是静默生成。确认后：服务器上已有这个码就同步一次把数据取回来，没有就

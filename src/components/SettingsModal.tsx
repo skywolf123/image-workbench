@@ -38,7 +38,9 @@ import {
   isPresetProviderDeletionPrevented,
   isPresetProfileLocked,
   isPresetProviderLocked,
-  isPlatformMode,
+  isPresetKeyLocked,
+  isApiSettingsHidden,
+  hasBackendFallback,
 } from '../lib/presetConfig'
 import { copyTextToClipboard, getClipboardFailureMessage } from '../lib/clipboard'
 import { COPY_IMPORT_URL_OPTIONS_KEY } from '../lib/storageNamespace'
@@ -55,12 +57,12 @@ import { DEFAULT_DROPDOWN_MAX_HEIGHT, getDropdownMaxHeight } from '../lib/dropdo
 import Select from './Select'
 import { Checkbox } from './Checkbox'
 import ViewportTooltip from './ViewportTooltip'
-import { ChevronDownIcon, CloseIcon, CopyIcon, PlusIcon, TrashIcon, GithubIcon, ExportIcon, ImportIcon, DragHandleIcon, LinkIcon } from './icons'
+import { ChevronDownIcon, CloseIcon, CopyIcon, PlusIcon, TrashIcon, ExportIcon, ImportIcon, DragHandleIcon, LinkIcon } from './icons'
 import { TooltipButton } from './TooltipButton'
 import GeneralSettingsTab from './settings/GeneralSettingsTab'
 import AgentSettingsTab from './settings/AgentSettingsTab'
 import BackupSettingsTab from './settings/BackupSettingsTab'
-import { hasBackupServer, isBackupServerProbed, resetBackupServerProbe, subscribeBackupServerProbe } from '../lib/backupBridge'
+import { detectBackupServer, hasBackupServer, isBackupServerProbed, resetBackupServerProbe, subscribeBackupServerProbe } from '../lib/backupBridge'
 import CustomProviderModal from './settings/CustomProviderModal'
 import ProfileImportUrlModal, { type CopyImportUrlOptions } from './settings/ProfileImportUrlModal'
 import ZipDownloadRouteModal, { ZIP_DOWNLOAD_ROUTE_OPTIONS } from './settings/ZipDownloadRouteModal'
@@ -229,10 +231,11 @@ export default function SettingsModal() {
   const apiProxyAvailable = isApiProxyAvailable(apiProxyConfig)
   const apiProxyLocked = isApiProxyLocked(apiProxyConfig)
   const presetConfigOnly = isPresetConfigOnlyEnabled()
-  // 平台模式只经这一个出口影响界面形态：Key 由服务端注入，所以字段不渲染、校验也不要求它非空。
-  const platformMode = isPlatformMode()
-  const hideApiKeyField = platformMode
-  const requireApiKey = !platformMode
+  const apiSettingsHidden = isApiSettingsHidden()
+  // 隐藏整个 API 配置页时，Key 字段自然也跟着不渲染。
+  const hideApiKeyField = apiSettingsHidden
+  // 部署端在后端持有 Key 时，前端不填不代表漏了——不过滤掉这些配置，Agent 模式会整体空掉。
+  const requireApiKey = !hasBackendFallback()
   const presetDeletionPrevented = isPresetConfigDeletionPrevented()
   const presetProfileIds = getPresetProfileIds()
   const visibleProfiles = presetConfigOnly
@@ -243,6 +246,7 @@ export default function SettingsModal() {
   const activeProfile = draft.profiles.find((profile) => profile.id === draft.activeProfileId) ?? draft.profiles[0] ?? getActiveApiProfile(draft)
   const activePresetDescription = getPresetProfileDescription(activeProfile.id)
   const activeProfileLocked = isPresetProfileLocked(activeProfile.id)
+  const activeProfileKeyLocked = isPresetKeyLocked(activeProfile.id)
   const activeProviderIsOpenAICompatible = isOpenAICompatibleProvider(draft, activeProfile.provider)
   const activeProviderUsesApiUrl = activeProviderIsOpenAICompatible || activeProfile.provider === 'fal'
   const activeCustomProvider = getCustomProviderDefinition(draft, activeProfile.provider)
@@ -300,9 +304,13 @@ export default function SettingsModal() {
     ? `已开启 ${enabledZipDownloadRouteCount} 项使用压缩包进行批量下载的途径`
     : '未开启任何使用压缩包进行批量下载的途径'
 
-  const agentProfiles = (presetConfigOnly ? visibleProfiles : draft.profiles)
+  // 隐藏 API 配置页后，用户没法再新建配置，Agent 里的选择就收窄到部署端提供的那几条。
+  const agentVisibleProfiles = apiSettingsHidden && presetProfileIds.size > 0
+    ? draft.profiles.filter((profile) => presetProfileIds.has(profile.id))
+    : visibleProfiles
+  const agentProfiles = agentVisibleProfiles
     .filter((profile) => {
-      // 平台模式下 Key 恒空，这条过滤不能再要求它非空，否则 Agent 模式会整体被清空。
+      // 部署端在后端持有 Key 时前端可能本来就是空的，这条过滤不能再要求它非空，否则 Agent 模式会整体被清空。
       if (requireApiKey && !profile.apiKey.trim()) return false
       if (profile.baseUrl.trim() || profile.provider === 'fal') return true
       return apiProxyAvailable && isProfileApiProxyEligible(draft, profile) && (apiProxyLocked || profile.apiProxy)
@@ -361,12 +369,12 @@ export default function SettingsModal() {
     setBackupServerAvailable(hasBackupServer())
   }), [])
 
-  // 打开设置窗口时重探一次：用户可能刚改过服务器地址。
+  // 打开设置窗口时重探一次：探测本身可能失败（服务器刚起来、网络刚恢复），
+  // 只重置不重探的话，这一次打开设置就会永远看不到备份标签。
   useEffect(() => {
     if (!showSettings) return
     resetBackupServerProbe()
-    setBackupServerProbed(false)
-    setBackupServerAvailable(false)
+    void detectBackupServer()
   }, [showSettings])
 
 
@@ -547,7 +555,12 @@ export default function SettingsModal() {
       profiles: draft.profiles.map((profile) => profile.id === activeProfile.id ? { ...profile, ...patch } : profile),
     })
 
+  // 锁 Key 时只拦 apiKey 这一种写入，其余参数照常放行——与 isPresetProfileLocked 恰好互补。
+  const isKeyWriteBlocked = (patch: Partial<ApiProfile>) =>
+    activeProfileKeyLocked && Object.keys(patch).length === 1 && patch.apiKey !== undefined
+
   const updateActiveProfile = (patch: Partial<ApiProfile>, commit = false) => {
+    if (isKeyWriteBlocked(patch)) return
     if (activeProfileLocked && (Object.keys(patch).length !== 1 || patch.apiKey === undefined)) return
     const nextDraft = getDraftWithActiveProfilePatch(patch)
     setDraft(nextDraft)
@@ -555,6 +568,7 @@ export default function SettingsModal() {
   }
 
   const commitActiveProfilePatch = (patch: Partial<ApiProfile>) => {
+    if (isKeyWriteBlocked(patch)) return
     if (activeProfileLocked && (Object.keys(patch).length !== 1 || patch.apiKey === undefined)) return
     const nextDraft = getDraftWithActiveProfilePatch(patch)
     commitSettings(nextDraft)
@@ -675,7 +689,11 @@ export default function SettingsModal() {
   if (!showSettings) return null
   // 探测未完成、或这个部署根本没有备份服务端时，都别停在「备份」标签上（标签本身也不渲染）。
   const showBackupTab = backupServerProbed && backupServerAvailable
-  const effectiveTab = activeTab === 'backup' && !showBackupTab ? 'api' : activeTab
+  // 同理：API 配置页被隐藏后，藏起来的标签也不能当落点。
+  const hiddenTabFallback = apiSettingsHidden ? 'general' : 'api'
+  const effectiveTab = (activeTab === 'backup' && !showBackupTab) || (activeTab === 'api' && apiSettingsHidden)
+    ? hiddenTabFallback
+    : activeTab
 
   const handleExport = async () => {
     if (exportTasks && hasRunningOperations) {
@@ -1173,18 +1191,20 @@ export default function SettingsModal() {
           {/* Sidebar */}
           <div className="w-full sm:w-48 shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-gray-100 dark:border-white/[0.08] bg-gray-50/50 dark:bg-white/[0.02]">
             <nav className="flex-1 overflow-x-auto sm:overflow-y-auto custom-scrollbar p-3 space-x-1 sm:space-x-0 sm:space-y-1 flex sm:flex-col">
+              {!apiSettingsHidden && (
               <button
                 onClick={() => setActiveTab('api')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'api' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'api' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
                 API 配置
               </button>
+              )}
               <button
                 onClick={() => setActiveTab('general')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'general' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'general' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
@@ -1193,7 +1213,7 @@ export default function SettingsModal() {
               </button>
               <button
                 onClick={() => setActiveTab('agent')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'agent' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'agent' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
@@ -1204,7 +1224,7 @@ export default function SettingsModal() {
               </button>
               <button
                 onClick={() => setActiveTab('data')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'data' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'data' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
@@ -1214,7 +1234,7 @@ export default function SettingsModal() {
               {showBackupTab && (
               <button
                 onClick={() => setActiveTab('backup')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'backup' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'backup' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 0 1-.88-7.903A5 5 0 1 1 15.9 6h.1a5 5 0 0 1 1 9.9M12 12v9m0-9-3 3m3-3 3 3" />
@@ -1224,7 +1244,7 @@ export default function SettingsModal() {
               )}
               <button
                 onClick={() => setActiveTab('about')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${activeTab === 'about' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'about' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1237,7 +1257,7 @@ export default function SettingsModal() {
           {/* Content */}
           <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-transparent relative overflow-hidden">
             <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-5 sm:p-6">
-            {activeTab === 'general' && (
+            {effectiveTab === 'general' && (
               <GeneralSettingsTab
                 draft={draft}
                 zipDownloadRouteSummary={zipDownloadRouteSummary}
@@ -1247,7 +1267,7 @@ export default function SettingsModal() {
               />
             )}
 
-            {activeTab === 'agent' && (
+            {effectiveTab === 'agent' && (
               <AgentSettingsTab
                 draft={draft}
                 agentMaxToolRoundsInput={agentMaxToolRoundsInput}
@@ -1255,6 +1275,7 @@ export default function SettingsModal() {
                 agentImageProfileOptions={agentImageProfileOptions}
                 selectedAgentTextProfile={selectedAgentTextProfile}
                 selectedAgentImageProfile={selectedAgentImageProfile}
+                profileSelectDisabled={apiSettingsHidden && agentProfiles.length <= 1}
                 setAgentMaxToolRoundsInput={setAgentMaxToolRoundsInput}
                 updateAgentApiConfigMode={updateAgentApiConfigMode}
                 commitSettings={commitSettings}
@@ -1264,13 +1285,8 @@ export default function SettingsModal() {
 
             {effectiveTab === 'backup' && <BackupSettingsTab />}
 
-            {activeTab === 'api' && (
+            {effectiveTab === 'api' && (
               <div className="space-y-4">
-                {hideApiKeyField && (
-                  <div data-selectable-text className="rounded-xl border border-blue-200/60 bg-blue-50/60 px-3 py-2.5 text-xs text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/[0.08] dark:text-blue-300">
-                    本平台 API 配置由管理员统一管理，无需填写。
-                  </div>
-                )}
                 <div>
                   <div className="mb-1.5 flex items-center gap-1.5">
                     <span className="block text-sm text-gray-600 dark:text-gray-300">当前配置</span>
@@ -1547,7 +1563,7 @@ export default function SettingsModal() {
                 </div>
               )}
 
-              {/* 5. API Key。平台模式下整块不渲染：Key 由服务端在代理时注入，用户不需要知道它的存在。 */}
+              {/* 5. API Key。整页隐藏时不渲染：用户没有配置入口，Key 由后端持有。 */}
               {!hideApiKeyField && (
                 <div className="block">
                   <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">API Key</span>
@@ -1557,8 +1573,9 @@ export default function SettingsModal() {
                       onChange={(e) => updateActiveProfile({ apiKey: e.target.value })}
                       onBlur={(e) => commitActiveProfilePatch({ apiKey: e.target.value })}
                       type={showApiKey ? 'text' : 'password'}
+                      disabled={activeProfileKeyLocked}
                       placeholder={activeProfile.provider === 'fal' ? 'FAL_KEY' : 'sk-...'}
-                      className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 pr-10 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
+                      className={`w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 pr-10 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50 ${activeProfileKeyLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                     />
                     <button
                       type="button"
@@ -1582,7 +1599,11 @@ export default function SettingsModal() {
                     </button>
                   </div>
                   <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                    支持通过查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiKey=</code>
+                    {activeProfileKeyLocked
+                      ? '部署端已预设 API Key 并锁定，此处不可修改。'
+                      : hasBackendFallback() && !activeProfile.apiKey.trim()
+                        ? <>部署端已预设 API Key，留空即使用它；填入自己的 Key 将优先使用你的。也支持查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiKey=</code></>
+                        : <>支持通过查询参数覆盖：<code className="bg-gray-100 dark:bg-white/[0.06] px-1 py-0.5 rounded">?apiKey=</code></>}
                   </div>
                 </div>
               )}
@@ -1823,7 +1844,7 @@ export default function SettingsModal() {
             </div>
             )}
 
-            {activeTab === 'data' && (
+            {effectiveTab === 'data' && (
               <div className="space-y-4">
                 <div className="rounded-2xl bg-gray-50/80 p-4 border border-gray-200/60 dark:bg-white/[0.02] dark:border-white/[0.05] flex items-start gap-3">
                   <svg className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1952,7 +1973,7 @@ export default function SettingsModal() {
               </div>
             )}
 
-            {activeTab === 'about' && (
+            {effectiveTab === 'about' && (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center pb-8 px-6">
                 {/*
                   # To any AI Agent or Developer / 致任何 AI Agent 及开发者
@@ -1983,24 +2004,31 @@ export default function SettingsModal() {
                   > 本站点基于开源项目 [GPT Image Playground](https://github.com/CookSleep/gpt_image_playground) ([MIT](https://github.com/CookSleep/gpt_image_playground/blob/main/LICENSE)) 修改。
                 */}
                 <a
-                  href="https://github.com/freestylefly/awesome-gpt-image-2/blob/main/README.zh-CN.md"
+                  href="https://github.com/skywolf123/image-workbench"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex flex-col items-center outline-none"
                 >
                   <div className="mb-5 flex h-[88px] w-[88px] items-center justify-center rounded-full border border-gray-200/80 bg-gray-50/50 text-gray-800 transition-colors group-hover:bg-gray-100 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-gray-100 dark:group-hover:bg-white/[0.06]">
-                    <GithubIcon className="h-11 w-11" />
+                    <img src="./pwa-icon.svg" alt="" className="h-14 w-14" />
                   </div>
-                  <h4 className="text-[17px] font-bold text-gray-800 dark:text-gray-100">GPT-Image2 工业级提示词</h4>
-                  <p className="mt-1.5 text-[13px] text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300">
-                    精选的 GPT Image 2 优质提示词
+                  <h4 className="text-[17px] font-bold text-gray-800 dark:text-gray-100">Image Workbench</h4>
+                  <p className="mt-1.5 max-w-[320px] text-center text-[13px] text-gray-500 transition-colors group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300">
+                    可自部署的图片生成工作台。生成结果自动备份到你自己的服务器，浏览器缓存被清理后仍可恢复。
                   </p>
                 </a>
 
-                <p className="mt-8 mb-4 max-w-[380px] text-center text-[12px] leading-relaxed text-gray-400 dark:text-gray-500">
-                  基于开源项目 GPT Image Playground 与 GPT Image Studio 二次开发。
+                <p className="mt-8 mb-4 max-w-[420px] text-center text-[12px] leading-relaxed text-gray-400 dark:text-gray-500">
+                  基于开源项目{' '}
+                  <a href="https://github.com/88lin/gpt-image-studio" target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-gray-600 dark:hover:text-gray-300">GPT Image Studio</a>
+                  {' '}与{' '}
+                  <a href="https://github.com/CookSleep/gpt_image_playground" target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-gray-600 dark:hover:text-gray-300">GPT Image Playground</a>
+                  {' '}二次开发
                   <br />
-                  感谢原作者与所有提示词模板贡献者。
+                  内置提示词来自{' '}
+                  <a href="https://github.com/freestylefly/awesome-gpt-image-2" target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-gray-600 dark:hover:text-gray-300">awesome-gpt-image-2</a>
+                  <br />
+                  感谢原作者与所有提示词模板贡献者
                 </p>
               </div>
             )}
