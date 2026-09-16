@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * 平台服务端。
+ * 自部署服务端。
  *
  * 一个零第三方依赖的 Node 进程，同时承担三件事：
  *
  * 1. 静态托管构建产物（含 SPA fallback）—— 取代上游容器里的 Nginx。
- * 2. 接管 `/api-proxy/*`，把请求转发到平台配置的上游地址，并**覆盖** `Authorization`
- *    头为平台 Key。前端一行不改：上游的代理路径构造已经完整，这里只是换了「谁接住」。
+ * 2. 接管 `/api-proxy/*`，把请求转发到部署配置的上游地址。前端自带 Key 就用前端的，
+ *    没带才补上本进程持有的 Key。前端一行不改：上游的代理路径构造已经完整，这里只是换了「谁接住」。
  * 3. 备份用的哑巴 blob 仓库（见下方 backup 段）。
  *
- * 平台 Key 只存在于本进程的环境变量（或挂载文件）里，永远不会进入前端产物。
+ * 后端持有的 Key 只存在于本进程的环境变量（或挂载文件）里，永远不会进入前端产物。
  *
  * 用法：node server/index.mjs
  */
@@ -69,7 +69,9 @@ const BUNDLE_PLACEHOLDERS = [
   ['__VITE_SHOW_PRESET_CONFIG_ONLY_PLACEHOLDER__', 'showPresetConfigOnly'],
   ['__VITE_LOCK_PRESET_CONFIG_PARAMS_PLACEHOLDER__', 'presetConfigParamsLocked'],
   ['__VITE_PREVENT_PRESET_CONFIG_DELETION_PLACEHOLDER__', 'presetConfigDeletionPrevented'],
-  ['__VITE_PLATFORM_MODE_PLACEHOLDER__', 'platformMode'],
+  ['__VITE_LOCK_PRESET_KEY_PLACEHOLDER__', 'presetKeyLocked'],
+  ['__VITE_HIDE_API_SETTINGS_PLACEHOLDER__', 'apiSettingsHidden'],
+  ['__VITE_BACKEND_FALLBACK_PLACEHOLDER__', 'backendFallback'],
 ]
 
 function readText(value) {
@@ -107,11 +109,11 @@ function readRequestBody(req) {
 
 function readApiKeyFile(path) {
   if (!existsSync(path)) {
-    throw new Error(`PLATFORM_API_KEY_FILE 指向的文件不存在：${path}`)
+    throw new Error(`DEFAULT_API_KEY_FILE 指向的文件不存在：${path}`)
   }
   const key = readFileSync(path, 'utf-8').trim()
   if (!key) {
-    throw new Error(`PLATFORM_API_KEY_FILE 指向的文件为空：${path}`)
+    throw new Error(`DEFAULT_API_KEY_FILE 指向的文件为空：${path}`)
   }
   return key
 }
@@ -140,35 +142,40 @@ async function resolveDefaultApiUrl(value) {
 
 export async function resolveServerConfig(options = {}) {
   const env = options.env ?? process.env
-  // 旧版 Docker 变量 API_URL 同样作为兜底值，与上游 migrate-api-env 行为一致。
+  // 旧版 Docker 变量 API_URL 作为兜底值，与上游 migrate-api-env 行为一致。
   const legacyApiUrl = readText(env.API_URL)
-  // API_PROXY_URL 是上游 Nginx 方案里的代理目标，容器 runtime 换成 Node 后由本进程接手，
-  // 所以这里继续认这个变量名，避免照 README 配的人静默失效。
+  // API_PROXY_URL 在上游就是「真实地址只存在于这里」的那个变量，容器 runtime 换成 Node 后
+  // 由本进程接手，语义正好就是后端持有的上游地址。
   const proxyApiUrl = readText(env.API_PROXY_URL)
-  const apiKeyFile = readText(env.PLATFORM_API_KEY_FILE)
-  const envApiKey = readText(env.PLATFORM_API_KEY)
+  const apiKeyFile = readText(env.DEFAULT_API_KEY_FILE)
+  const envApiKey = readText(env.DEFAULT_API_KEY)
   const apiKey = options.apiKey !== undefined ? options.apiKey : apiKeyFile ? readApiKeyFile(apiKeyFile) : envApiKey || null
+  const apiProxyEnabled = isTruthy(env.ENABLE_API_PROXY)
 
   return {
     host: readText(options.host ?? env.HOST) || '0.0.0.0',
     port: Number(options.port ?? env.PORT ?? 3000),
     distDir: resolve(options.distDir ?? (readText(env.DIST_DIR) || defaultDistDir)),
     dataDir: resolve(options.dataDir ?? (readText(env.DATA_DIR) || '/data')),
-    apiUrl: readText(options.apiUrl ?? env.PLATFORM_API_URL) || proxyApiUrl || legacyApiUrl,
+    // 后端持有的上游地址。主变量与上游一致，API_URL 只作旧配置的兜底，
+    // 顺序反过来的话，照旧变量配的人会被当成「用了弃用变量」而收到迁移提示。
+    apiUrl: readText(options.apiUrl) || proxyApiUrl || legacyApiUrl,
     apiKey,
-    proxyTimeoutMs: Number(readText(env.PLATFORM_PROXY_TIMEOUT_MS) || 600_000),
+    proxyTimeoutMs: Number(readText(env.PROXY_TIMEOUT_MS) || 600_000),
     bundleValues: {
       defaultApiUrl: await resolveDefaultApiUrl(readText(options.defaultApiUrl ?? env.DEFAULT_API_URL)),
-      apiProxyAvailable: isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL) || proxyApiUrl) ? 'true' : 'false',
-      apiProxyLocked: (isTruthy(env.ENABLE_API_PROXY) || Boolean(readText(env.PLATFORM_API_URL) || proxyApiUrl)) && isTruthy(env.LOCK_API_PROXY) ? 'true' : 'false',
+      // 代理开关只由 ENABLE_API_PROXY 决定，与上游语义一致；后端配了 Key 不再隐式打开它。
+      apiProxyAvailable: apiProxyEnabled ? 'true' : 'false',
+      apiProxyLocked: apiProxyEnabled && isTruthy(env.LOCK_API_PROXY) ? 'true' : 'false',
       dockerDeployment: 'true',
       dockerLegacyApiUrlUsed: legacyApiUrl ? 'true' : 'false',
       showPresetConfigOnly: isTruthy(env.SHOW_PRESET_CONFIG_ONLY) || isTruthy(env.SHOW_DEFAULT_CONFIG_ONLY) ? 'true' : 'false',
       presetConfigParamsLocked: isTruthy(env.LOCK_PRESET_CONFIG_PARAMS) ? 'true' : 'false',
       presetConfigDeletionPrevented: isTruthy(env.PREVENT_PRESET_CONFIG_DELETION) ? 'true' : 'false',
-      // 有平台 Key 就说明这个部署在替用户出 Key：界面该隐藏 Key 字段，并由服务端代注入。
-      // 不需要用户额外声明 PLATFORM_MODE —— 少一个必须记得开的开关，就少一处配错。
-      platformMode: isTruthy(env.PLATFORM_MODE) || Boolean(apiKey) ? 'true' : 'false',
+      presetKeyLocked: isTruthy(env.LOCK_PRESET_KEY) ? 'true' : 'false',
+      apiSettingsHidden: isTruthy(env.HIDE_API_SETTINGS) ? 'true' : 'false',
+      // 后端持有 Key 时前端才可以留空。它只放宽校验，不参与锁定——前端填了 Key 依然优先。
+      backendFallback: apiKey ? 'true' : 'false',
     },
   }
 }
@@ -273,7 +280,7 @@ function buildUpstreamTarget(apiUrl, reqUrl) {
   try {
     return { target: new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`) }
   } catch {
-    return { error: `平台未配置可用的上游地址，无法代理请求。请设置 PLATFORM_API_URL 后重启服务端。（当前值：${apiUrl || '空'}）` }
+    return { error: `代理未配置可用的上游地址，无法转发请求。请为服务端设置 API_PROXY_URL 后重启。（当前值：${apiUrl || '空'}）` }
   }
 }
 
@@ -285,11 +292,19 @@ function filterRequestHeaders(headers, target, apiKey, remoteAddress) {
     filtered[name] = value
   }
   filtered.host = target.host
-  // 平台 Key 在这里覆盖前端发来的一切凭证，包括空值。
-  filtered.authorization = `Bearer ${apiKey}`
+  // 前端带了自己的 Key 就用它的；没带才用后端持有的，这是「前端优先」的落点。
+  // 注意空 Key 时前端仍会发出 `Bearer `，所以要按 token 是否为空判断，而不是按头是否存在。
+  const forwardedToken = readBearerToken(headers.authorization)
+  filtered.authorization = `Bearer ${forwardedToken || apiKey}`
   const forwardedFor = [headers['x-forwarded-for'], remoteAddress].filter(Boolean).join(', ')
   if (forwardedFor) filtered['x-forwarded-for'] = forwardedFor
   return filtered
+}
+
+function readBearerToken(header) {
+  if (typeof header !== 'string') return ''
+  const match = /^Bearer\s+(.*)$/i.exec(header.trim())
+  return match ? match[1].trim() : ''
 }
 
 function filterResponseHeaders(headers) {
@@ -309,15 +324,16 @@ function handleProxy(req, res, config) {
 
   const { target, error } = buildUpstreamTarget(config.apiUrl, req.url)
   if (error) {
-    sendError(res, 503, error, 'platform_upstream_missing')
+    sendError(res, 503, error, 'backend_upstream_missing')
     return
   }
-  if (!config.apiKey) {
+  // 前端自带 Key 时后端不需要持有：这条代理只负责转发和补地址。
+  if (!config.apiKey && !readBearerToken(req.headers.authorization)) {
     sendError(
       res,
       503,
-      '平台未配置 API Key，无法代理请求。请设置 PLATFORM_API_KEY 或 PLATFORM_API_KEY_FILE 后重启服务端。',
-      'platform_api_key_missing',
+      '代理未收到可用的 API Key。请在设置页填写，或为服务端设置 DEFAULT_API_KEY / DEFAULT_API_KEY_FILE 后重启。',
+      'api_key_missing',
     )
     return
   }
@@ -356,7 +372,7 @@ function handleProxy(req, res, config) {
 /**
  * 成员码只做格式校验后直接用作目录名。
  *
- * 它不承担凭证职责：没有白名单，首次出现的成员码即建立命名空间，平台 Key 也不在备份里，
+ * 它不承担凭证职责：没有白名单，首次出现的成员码即建立命名空间，后端 Key 也不在备份里，
  * 因此猜到别人的成员码的后果被限制在「看到该成员的图片」，不会升级为 Key 泄漏。
  */
 function resolveMemberId(req) {
@@ -495,7 +511,7 @@ async function handleBackup(req, res, store) {
 
 // ===== 服务实例 =====
 
-export async function createPlatformServer(options = {}) {
+export async function createServer(options = {}) {
   const config = await resolveServerConfig(options)
   injectBundleConfig(config.distDir, config.bundleValues)
   const backupStore = options.backupStore ?? createBackupStore(config.dataDir)
@@ -543,15 +559,15 @@ export async function createPlatformServer(options = {}) {
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 
 if (isDirectRun) {
-  createPlatformServer()
+  createServer()
     .then(async (instance) => {
       await instance.listen()
-      console.log(`平台服务已启动：http://${instance.config.host === '0.0.0.0' ? 'localhost' : instance.config.host}:${instance.port}`)
+      console.log(`服务已启动：http://${instance.config.host === '0.0.0.0' ? 'localhost' : instance.config.host}:${instance.port}`)
       console.log(`上游地址：${instance.config.apiUrl || '（未配置，代理请求会被拒绝）'}`)
       console.log(`备份数据目录：${instance.config.dataDir}`)
     })
     .catch((error) => {
-      console.error(`平台服务启动失败：${error.message}`)
+      console.error(`服务启动失败：${error.message}`)
       process.exit(1)
     })
 }

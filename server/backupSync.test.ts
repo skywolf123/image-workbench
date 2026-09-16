@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createPlatformServer } from './index.mjs'
+import { createServer } from './index.mjs'
 import {
   bindBackupSources,
   configureBackup,
@@ -128,7 +128,7 @@ function makeSource(overrides: Partial<BackupSource> = {}): BackupSource {
 }
 
 async function startPlatform() {
-  const instance = await createPlatformServer({
+  const instance = await createServer({
     host: '127.0.0.1',
     port: 0,
     distDir: makeDist(),

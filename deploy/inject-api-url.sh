@@ -34,6 +34,19 @@ if [ "$PREVENT_PRESET_CONFIG_DELETION" = "true" ]; then
     PRESET_CONFIG_DELETION_PREVENTED=true
 fi
 
+PRESET_KEY_LOCKED=false
+if [ "$LOCK_PRESET_KEY" = "true" ]; then
+    PRESET_KEY_LOCKED=true
+fi
+
+API_SETTINGS_HIDDEN=false
+if [ "$HIDE_API_SETTINGS" = "true" ]; then
+    API_SETTINGS_HIDDEN=true
+fi
+
+# Nginx 方案自己不持有 Key，兜底只可能来自用户在前端填的那一份。
+BACKEND_FALLBACK=false
+
 escape_sed_replacement() {
     printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
 }
@@ -90,6 +103,9 @@ find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_DO
 find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_SHOW_PRESET_CONFIG_ONLY_PLACEHOLDER__|$PRESET_CONFIG_ONLY|g" {} +
 find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_LOCK_PRESET_CONFIG_PARAMS_PLACEHOLDER__|$PRESET_CONFIG_PARAMS_LOCKED|g" {} +
 find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_PREVENT_PRESET_CONFIG_DELETION_PLACEHOLDER__|$PRESET_CONFIG_DELETION_PREVENTED|g" {} +
+find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_LOCK_PRESET_KEY_PLACEHOLDER__|$PRESET_KEY_LOCKED|g" {} +
+find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_HIDE_API_SETTINGS_PLACEHOLDER__|$API_SETTINGS_HIDDEN|g" {} +
+find /usr/share/nginx/html/assets -type f -name "*.js" -exec sed -i "s|__VITE_BACKEND_FALLBACK_PLACEHOLDER__|$BACKEND_FALLBACK|g" {} +
 
 # 检查是否启用了 API 代理
 if [ "$ENABLE_API_PROXY" != "true" ]; then

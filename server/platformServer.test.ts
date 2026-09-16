@@ -4,10 +4,10 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createPlatformServer } from './index.mjs'
+import { createServer } from './index.mjs'
 import { createBackupStore } from './backup.mjs'
 
-const API_KEY = 'platform-secret-key'
+const API_KEY = 'backend-secret-key'
 const API_URL = 'https://upstream.invalid/v1'
 
 let tempDirs = []
@@ -19,10 +19,10 @@ function makeTempDir(prefix) {
 }
 
 function makeDist() {
-  const root = makeTempDir('platform-root-')
+  const root = makeTempDir('server-root-')
   const dist = join(root, 'dist')
   mkdirSync(join(dist, 'assets'), { recursive: true })
-  writeFileSync(join(dist, 'index.html'), '<!doctype html><title>平台</title>')
+  writeFileSync(join(dist, 'index.html'), '<!doctype html><title>工作台</title>')
   writeFileSync(join(dist, 'assets', 'app.js'), 'const k="__VITE_DEFAULT_API_URL_PLACEHOLDER__";')
   return dist
 }
@@ -60,11 +60,11 @@ function rawRequest(port, rawPath) {
 }
 
 async function startPlatform(options = {}) {
-  const instance = await createPlatformServer({
+  const instance = await createServer({
     host: '127.0.0.1',
     port: 0,
     distDir: options.distDir ?? makeDist(),
-    dataDir: options.dataDir ?? makeTempDir('platform-data-'),
+    dataDir: options.dataDir ?? makeTempDir('server-data-'),
     apiUrl: options.apiUrl ?? API_URL,
     apiKey: options.apiKey === undefined ? API_KEY : options.apiKey,
     env: options.env ?? {},
@@ -84,8 +84,8 @@ afterEach(() => {
   for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true })
 })
 
-describe('平台服务：接管 API 代理', () => {
-  it('覆盖前端发来的 Authorization 头并转发到平台配置的上游地址', async () => {
+describe('服务端：接管 API 代理', () => {
+  it('前端没带 Key 时补上后端持有的 Key，并转发到部署配置的上游地址', async () => {
     const upstream = await startUpstream((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true }))
@@ -95,7 +95,7 @@ describe('平台服务：接管 API 代理', () => {
     try {
       const response = await fetch(`${platform.origin}/api-proxy/images/generations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer user-supplied-key' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: '一只猫' }),
       })
 
@@ -105,6 +105,43 @@ describe('平台服务：接管 API 代理', () => {
       expect(upstream.received[0].headers.authorization).toBe(`Bearer ${API_KEY}`)
       expect(upstream.received[0].url).toBe('/v1/images/generations')
       expect(upstream.received[0].body.toString()).toBe('{"prompt":"一只猫"}')
+    } finally {
+      await platform.close()
+      await upstream.close()
+    }
+  })
+
+  it('前端带了自己的 Key 时原样转发，后端不覆盖', async () => {
+    const upstream = await startUpstream((req, res) => res.end('{}'))
+    const platform = await startPlatform({ apiUrl: `${upstream.origin}/v1` })
+
+    try {
+      await fetch(`${platform.origin}/api-proxy/images/generations`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer user-supplied-key' },
+        body: '{}',
+      })
+
+      expect(upstream.received[0].headers.authorization).toBe('Bearer user-supplied-key')
+    } finally {
+      await platform.close()
+      await upstream.close()
+    }
+  })
+
+  it('前端发出空 Key 时也视为没带，用后端的补上', async () => {
+    const upstream = await startUpstream((req, res) => res.end('{}'))
+    const platform = await startPlatform({ apiUrl: `${upstream.origin}/v1` })
+
+    try {
+      // Key 为空时前端仍会发出 `Bearer `，不能按「头存在」判断。
+      await fetch(`${platform.origin}/api-proxy/images/generations`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' },
+        body: '{}',
+      })
+
+      expect(upstream.received[0].headers.authorization).toBe(`Bearer ${API_KEY}`)
     } finally {
       await platform.close()
       await upstream.close()
@@ -129,7 +166,7 @@ describe('平台服务：接管 API 代理', () => {
     }
   })
 
-  it('平台 Key 未配置时拒绝代理请求并给出可定位的提示', async () => {
+  it('前后端都没有 Key 时拒绝代理请求并给出可定位的提示', async () => {
     const upstream = await startUpstream((req, res) => res.end('{}'))
     const platform = await startPlatform({ apiUrl: upstream.origin, apiKey: null })
 
@@ -137,7 +174,7 @@ describe('平台服务：接管 API 代理', () => {
       const response = await fetch(`${platform.origin}/api-proxy/images/generations`, { method: 'POST', body: '{}' })
 
       expect(response.status).toBe(503)
-      expect((await response.json()).error.type).toBe('platform_api_key_missing')
+      expect((await response.json()).error.type).toBe('api_key_missing')
       expect(upstream.received).toHaveLength(0)
     } finally {
       await platform.close()
@@ -180,22 +217,22 @@ describe('平台服务：接管 API 代理', () => {
       const body = await response.json()
 
       expect(response.status).toBe(503)
-      expect(body.error.type).toBe('platform_upstream_missing')
-      expect(body.error.message).toContain('PLATFORM_API_URL')
+      expect(body.error.type).toBe('backend_upstream_missing')
+      expect(body.error.message).toContain('API_PROXY_URL')
     } finally {
       await platform.close()
     }
   })
 })
 
-describe('平台服务：静态托管与运行期注入', () => {
+describe('服务端：静态托管与运行期注入', () => {
   it('深链接回退到 index.html，静态资源带长期缓存', async () => {
     const platform = await startPlatform()
 
     try {
       const deepLink = await fetch(`${platform.origin}/some/deep/link`)
       expect(deepLink.status).toBe(200)
-      expect(await deepLink.text()).toContain('平台')
+      expect(await deepLink.text()).toContain('工作台')
 
       const asset = await fetch(`${platform.origin}/assets/app.js`)
       expect(asset.status).toBe(200)
@@ -215,33 +252,45 @@ describe('平台服务：静态托管与运行期注入', () => {
       const response = await rawRequest(platform.port, '/../secret.txt')
 
       expect(response.status).toBe(200)
-      expect(response.body).toContain('平台')
+      expect(response.body).toContain('工作台')
       expect(response.body).not.toContain('不该被读到')
     } finally {
       await platform.close()
     }
   })
 
-  it('配置了平台 Key 时自动打开平台模式，不需要额外声明', async () => {
+  it('后端持有 Key 时告诉前端可以留空，用户填了仍然优先', async () => {
     const dist = makeDist()
-    writeFileSync(join(dist, 'assets', 'mode.js'), 'const m="__VITE_PLATFORM_MODE_PLACEHOLDER__";')
-    const platform = await startPlatform({ distDir: dist, apiKey: 'platform-secret-key' })
+    writeFileSync(join(dist, 'assets', 'fallback.js'), 'const f="__VITE_BACKEND_FALLBACK_PLACEHOLDER__";')
+    const platform = await startPlatform({ distDir: dist, apiKey: 'backend-secret-key' })
 
     try {
-      // 有 Key 就说明这个部署在替用户出 Key，界面该隐藏 Key 字段。
-      expect(readFileSync(join(dist, 'assets', 'mode.js'), 'utf-8')).toContain('const m="true"')
+      expect(readFileSync(join(dist, 'assets', 'fallback.js'), 'utf-8')).toContain('const f="true"')
     } finally {
       await platform.close()
     }
   })
 
-  it('没配置平台 Key 时不进入平台模式，前端仍由用户自己填', async () => {
+  it('后端没有 Key 时前端照旧必须自己填', async () => {
     const dist = makeDist()
-    writeFileSync(join(dist, 'assets', 'mode.js'), 'const m="__VITE_PLATFORM_MODE_PLACEHOLDER__";')
+    writeFileSync(join(dist, 'assets', 'fallback.js'), 'const f="__VITE_BACKEND_FALLBACK_PLACEHOLDER__";')
     const platform = await startPlatform({ distDir: dist, apiKey: null })
 
     try {
-      expect(readFileSync(join(dist, 'assets', 'mode.js'), 'utf-8')).toContain('const m="false"')
+      expect(readFileSync(join(dist, 'assets', 'fallback.js'), 'utf-8')).toContain('const f="false"')
+    } finally {
+      await platform.close()
+    }
+  })
+
+  it('隐藏配置页与锁定 Key 由各自的开关决定，不会因为配了 Key 就自动生效', async () => {
+    const dist = makeDist()
+    writeFileSync(join(dist, 'assets', 'switch.js'), 'const h="__VITE_HIDE_API_SETTINGS_PLACEHOLDER__";const l="__VITE_LOCK_PRESET_KEY_PLACEHOLDER__";')
+    const platform = await startPlatform({ distDir: dist, apiKey: 'backend-secret-key' })
+
+    try {
+      // 只配了 Key 时两个开关都该保持关闭——前端配置路线不受影响。
+      expect(readFileSync(join(dist, 'assets', 'switch.js'), 'utf-8')).toContain('const h="false";const l="false"')
     } finally {
       await platform.close()
     }
@@ -359,7 +408,7 @@ describe('备份 blob 仓库', () => {
     }
   })
 
-  it('ping 不需要成员码，用于纯静态/平台部署的能力探测', async () => {
+  it('ping 不需要成员码，用于探测部署是否带服务端', async () => {
     const platform = await startPlatform()
     try {
       const response = await fetch(`${platform.origin}/api/backup/ping`)
@@ -442,6 +491,78 @@ describe('备份 blob 仓库', () => {
       expect(response.status).toBe(200)
     } finally {
       await platform.close()
+    }
+  })
+})
+
+describe('服务端：后端持有地址与 Key 的取值优先级', () => {
+  it('API_PROXY_URL 是主变量，API_URL 只作旧配置兜底', async () => {
+    const instance = await createServer({
+      host: '127.0.0.1',
+      port: 0,
+      distDir: makeDist(),
+      dataDir: makeTempDir('server-data-'),
+      env: { API_PROXY_URL: 'https://proxy.example.com/v1', API_URL: 'https://legacy.example.com/v1' },
+    })
+    try {
+      expect(instance.config.apiUrl).toBe('https://proxy.example.com/v1')
+    } finally {
+      await instance.close()
+    }
+  })
+
+  it('只有旧的 API_URL 时才回退到它，并标记为使用了旧变量', async () => {
+    const instance = await createServer({
+      host: '127.0.0.1',
+      port: 0,
+      distDir: makeDist(),
+      dataDir: makeTempDir('server-data-'),
+      env: { API_URL: 'https://legacy.example.com/v1' },
+    })
+    try {
+      expect(instance.config.apiUrl).toBe('https://legacy.example.com/v1')
+      expect(instance.config.bundleValues.dockerLegacyApiUrlUsed).toBe('true')
+    } finally {
+      await instance.close()
+    }
+  })
+
+  it('用 API_PROXY_URL 部署不会触发旧变量迁移提示', async () => {
+    const instance = await createServer({
+      host: '127.0.0.1',
+      port: 0,
+      distDir: makeDist(),
+      dataDir: makeTempDir('server-data-'),
+      env: { API_PROXY_URL: 'https://proxy.example.com/v1' },
+    })
+    try {
+      expect(instance.config.bundleValues.dockerLegacyApiUrlUsed).toBe('false')
+    } finally {
+      await instance.close()
+    }
+  })
+
+  it('DEFAULT_API_KEY 及其文件形式都能提供后端 Key', async () => {
+    const keyFile = join(makeTempDir('server-key-'), 'key.txt')
+    writeFileSync(keyFile, 'key-from-file\n')
+
+    const fromEnv = await createServer({
+      host: '127.0.0.1', port: 0, distDir: makeDist(), dataDir: makeTempDir('server-data-'),
+      env: { DEFAULT_API_KEY: 'key-from-env' },
+    })
+    const fromFile = await createServer({
+      host: '127.0.0.1', port: 0, distDir: makeDist(), dataDir: makeTempDir('server-data-'),
+      env: { DEFAULT_API_KEY_FILE: keyFile },
+    })
+
+    try {
+      expect(fromEnv.config.apiKey).toBe('key-from-env')
+      expect(fromFile.config.apiKey).toBe('key-from-file')
+      expect(fromEnv.config.bundleValues.backendFallback).toBe('true')
+      expect(fromFile.config.bundleValues.backendFallback).toBe('true')
+    } finally {
+      await fromEnv.close()
+      await fromFile.close()
     }
   })
 })
