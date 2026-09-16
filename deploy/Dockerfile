@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM --platform=$BUILDPLATFORM node:20-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ RUN pnpm run build
 # runtime 由 Node 取代 Nginx：同一个进程既托管静态产物，也接住 /api-proxy/*，并在转发时补上
 # 本进程持有的 Key，顺带提供备份接口。上游的注入脚本与 nginx 配置仍然保留在仓库里，
 # 作为「纯静态 + Nginx」这套部署方案的存档（见 README）。
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
