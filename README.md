@@ -4,7 +4,7 @@
 
 **可自部署的图片生成工作台**
 
-平台方统一持有 API Key，成员打开页面即可生成；图片与任务自动备份到你的服务器，浏览器存储被清空后一键取回。
+图片与任务自动备份到你的服务器，浏览器存储被清空后一键取回。
 
 </div>
 
@@ -12,7 +12,7 @@
 
 > [!NOTE]
 > 本项目是 [88lin/gpt-image-studio](https://github.com/88lin/gpt-image-studio) 的二次开发版本。
-> 完整继承其全部功能，并在此基础上增加了**平台级 API Key** 与**自动备份**两项能力。
+> 完整继承其全部功能，并在此基础上增加了**后端兜底配置**与**自动备份**两项能力。
 > 同时也保留了纯静态部署（GitHub Pages / Vercel / Cloudflare）的完整能力，此时行为与原版一致。
 
 ---
@@ -23,13 +23,13 @@
 
 ### image-workbench（本项目）
 
-在 `88lin/gpt-image-studio` 基础上，把它从「用户自己填 API Key 的纯前端工具」扩展为**自部署平台**：
+在 `88lin/gpt-image-studio` 基础上，增加了**自部署服务端**与**自动备份**两件事：
 
-- **平台级 API Key**：API Key / 上游地址 / 模型由部署方通过环境变量提供，由服务端在代理请求时注入。用户不需要、也看不到这些配置，构建产物里搜不到 Key。
 - **自动备份到服务器**：图片、任务、收藏、Agent 会话在后台自动上传到同一容器内的备份服务。浏览器存储被清空后，填入成员码即可一键取回。
 - **成员空间**：一个成员码对应服务器上的一个数据空间，同组成员共用一个码即可共享备份，不同成员之间互不干扰。
 - **浏览器存储持久化申请**：主动向浏览器申请持久化存储权限，降低数据被自动清理的概率。
 - **存储命名隔离**：IndexedDB 与 localStorage 改用本项目自己的名字，与原版即便部署在同一 `host:port` 也不会互相污染（旧数据会自动迁移）。
+- **后端兜底配置**：部署方可在服务端持有 API Key 与上游地址，作为前端配置缺失时的兜底。前端配置优先，只有在用户没有配置、或部署方用开关关掉了前端配置入口时才启用。配合隐藏配置页与锁定 Key 两个开关，可让 Key 完全不出现在前端产物里。
 
 ### 88lin/gpt-image-studio（上一层）
 
@@ -38,7 +38,6 @@
 - **593 个内置提示词模板**：聚合厚十方精选、prompts.kkkm.cn、GPT-Image-2 案例观摩馆与多个社区来源，支持按标题、描述、来源与标签检索。
 - **Docker 部署方案**：提供 `Dockerfile`、Nginx 同源 `/api-proxy/` 转发、环境变量注入构建产物的整套方案。
 - **预置配置机制**：`DEFAULT_API_URL` / `VITE_DEFAULT_API_URL` 支持三种填写方式，并配套锁定与防删除开关。
-- **移除上游赞助弹窗**、焦点管理等细节优化。
 
 ### CookSleep/gpt_image_playground（最上游）
 
@@ -54,22 +53,29 @@
 
 ## ✨ 功能
 
-### 平台化能力（本项目新增）
+### 新增能力
 
-#### 🔐 平台级 API Key
+#### 🔐 后端兜底配置
 
-部署时通过环境变量提供 Key，服务端在转发请求时注入 `Authorization` 头：
+部署方可以在服务端持有 API Key 与上游地址，作为前端配置缺失时的兜底。请求经同源 `/api-proxy/` 转发时，服务端补上前端没有提供的那部分。
+
+**前端配置优先**：只要前端填了值就一律使用前端的——无论是用户在设置页填的，还是通过 `DEFAULT_API_URL` 预置进去的。后端只在空缺处兜底。
 
 ```bash
--e PLATFORM_API_URL=https://your-upstream.example.com/v1 \
--e PLATFORM_API_KEY=sk-xxxx
+-e API_PROXY_URL=https://your-upstream.example.com/v1 \
+-e DEFAULT_API_KEY=sk-xxxx
 ```
 
-配置了平台 Key 后自动进入平台模式：设置页隐藏 API Key / 上游地址 / 模型等字段，用户打开页面即可生成图片。
+想让 Key 完全不出现在前端，用这两个开关关掉前端配置入口：
 
-- **Key 不进前端**：构建产物中不含 Key，浏览器 F12 搜不到
-- **深度防御**：即使有人往预置配置里塞了 Key，也会在归一化阶段被清空
-- **不需要用户声明**：有 Key 就自动进入平台模式，不必额外记得开开关
+| 开关 | 作用 |
+|---|---|
+| `HIDE_API_SETTINGS=true` | 隐藏设置页的「API 配置」标签。Agent 配置里的配置选择会收窄到预置项，只剩一条时不可切换。 |
+| `LOCK_PRESET_KEY=true` | 锁定预置配置的 API Key 字段，并清空本地已存的 Key，强制走后端。与上游的 `LOCK_PRESET_CONFIG_PARAMS` 恰好互补——那个锁除 Key 外的全部参数，这个只锁 Key。 |
+
+- **Key 不进前端**：后端持有的 Key 只存在于 Node 进程的环境变量（或挂载文件）里，构建产物中搜不到
+- **不覆盖上游语义**：上游预置配置的三种填写方式、变更传播、锁定与防删除开关全部原样保留，后端兜底只是另一条路
+- **纯静态部署不受影响**：不部署 Node 服务时这套机制完全不参与，行为与上游一致
 
 #### 💾 自动备份
 
@@ -95,7 +101,7 @@
 
 - 首次打开时自动生成一个随机码，可自行修改后告诉同组成员
 - 修改成员码时：服务器上已有该码则同步其数据，没有则新建并把本设备的内容备份过去
-- 成员码不是凭证——平台 Key 不在备份里，即便被猜到也只会看到该成员的图片
+- 成员码不是凭证——后端持有的 Key 不在备份里，即便被猜到也只会看到该成员的图片
 
 ### 继承自上游的能力
 
@@ -149,7 +155,7 @@
 
 两种部署形态，**同一份构建产物**，运行期决定：
 
-| 形态 | 平台 Key | 自动备份 | 说明 |
+| 形态 | 后端兜底配置 | 自动备份 | 说明 |
 |---|:---:|:---:|---|
 | **Node 服务**（推荐） | ✅ | ✅ | 完整能力，一个容器搞定 |
 | 纯静态托管 | ❌ | ❌ | 行为与原版一致，用户自己填配置 |
@@ -165,28 +171,51 @@
 docker run -d --name image-workbench \
   -p 8080:3000 \
   -v /mnt/user/appdata/image-workbench:/data \
-  -e PLATFORM_API_URL=https://your-upstream.example.com/v1 \
-  -e PLATFORM_API_KEY=sk-xxxx \
+  -e ENABLE_API_PROXY=true \
+  -e API_PROXY_URL=https://your-upstream.example.com/v1 \
+  -e DEFAULT_API_KEY=sk-xxxx \
   ghcr.io/skywolf123/image-workbench:latest
 ```
 
 访问 `http://<你的服务器地址>:8080`，首次打开会引导生成成员码。
+
+> [!NOTE]
+> 后端兜底只在请求走同源代理时才起作用，所以要让服务端补 Key 的话，`ENABLE_API_PROXY=true` 不能省。
 
 > [!IMPORTANT]
 > `-v /mnt/user/appdata/image-workbench:/data` 是**必须**的：备份数据落在 `/data`，不挂载的话容器重建后备份就没了。
 
 #### 环境变量
 
+**后端兜底配置**
+
 | 变量 | 说明 |
 |------|------|
-| `PLATFORM_API_KEY` | **平台级 API Key**。配置后自动进入平台模式，Key 只存在于服务端进程，不进前端产物。 |
-| `PLATFORM_API_KEY_FILE` | 从容器内文件读取平台 Key，避免 `docker inspect` 泄漏。文件不存在或为空时启动失败。 |
-| `PLATFORM_API_URL` | 代理转发的上游地址（不自动补 `/v1`）。也兼容上游的 `API_PROXY_URL` 与更旧的 `API_URL`。 |
-| `PLATFORM_MODE` | 手动开启平台模式。**通常不需要**——配置了 `PLATFORM_API_KEY` 就会自动进入。 |
-| `ENABLE_API_PROXY` | 开启同源代理。平台模式下自动开启。 |
+| `DEFAULT_API_KEY` | 后端持有的 API Key。前端没填时由代理补上，且不会进入前端产物。 |
+| `DEFAULT_API_KEY_FILE` | 从容器内文件读取上述 Key，避免 `docker inspect` 泄漏。文件不存在或为空时启动失败。 |
+| `API_PROXY_URL` | 代理转发的上游地址（不自动补 `/v1`）。沿用上游变量名，语义就是「真实地址只存在于这里」。 |
+| `API_URL` | 上游更早的变量名，作为 `API_PROXY_URL` 的兜底保留。**新部署请直接用 `API_PROXY_URL`**——设了它会被视为使用了弃用变量，用户首次打开会收到一条迁移提示。 |
+
+**代理**
+
+| 变量 | 说明 |
+|------|------|
+| `ENABLE_API_PROXY` | 开启同源代理，请求发往 `/api-proxy/` 再转发到 `API_PROXY_URL`。后端兜底依赖它。 |
 | `LOCK_API_PROXY` | 强制锁定代理为开启，用户无法关闭。 |
+
+**前端配置的开关**
+
+| 变量 | 说明 |
+|------|------|
+| `HIDE_API_SETTINGS` | 隐藏设置页的「API 配置」标签。 |
+| `LOCK_PRESET_KEY` | 锁定预置配置的 API Key 字段并清空本地已存的 Key。 |
 | `DEFAULT_API_URL` | 预置配置，支持 [预置配置说明](#preset-config) 中的三种填写方式。指向 `.json` 文件或容器内路径时启动时自动读取并内嵌。 |
 | `LOCK_PRESET_CONFIG_PARAMS` / `PREVENT_PRESET_CONFIG_DELETION` / `SHOW_PRESET_CONFIG_ONLY` | 见 [环境变量一览](#preset-config)。 |
+
+**其它**
+
+| 变量 | 说明 |
+|------|------|
 | `DATA_DIR` | 备份数据目录，默认 `/data`。 |
 | `HOST` / `PORT` | 监听地址和端口，默认 `0.0.0.0:3000`。 |
 
@@ -203,8 +232,9 @@ docker run -d --name image-workbench \
   -p 8080:3000 \
   -v /mnt/user/appdata/image-workbench:/data \
   -v /mnt/user/appdata/image-workbench/key.txt:/run/secrets/api_key:ro \
-  -e PLATFORM_API_URL=https://your-upstream.example.com/v1 \
-  -e PLATFORM_API_KEY_FILE=/run/secrets/api_key \
+  -e ENABLE_API_PROXY=true \
+  -e API_PROXY_URL=https://your-upstream.example.com/v1 \
+  -e DEFAULT_API_KEY_FILE=/run/secrets/api_key \
   ghcr.io/skywolf123/image-workbench:latest
 ```
 
@@ -222,17 +252,18 @@ services:
     volumes:
       - /mnt/user/appdata/image-workbench:/data
     environment:
-      - PLATFORM_API_URL=https://your-upstream.example.com/v1
-      - PLATFORM_API_KEY=sk-xxxx
+      - ENABLE_API_PROXY=true
+      - API_PROXY_URL=https://your-upstream.example.com/v1
+      - DEFAULT_API_KEY=sk-xxxx
     restart: unless-stopped
 ```
 
 </details>
 
 <details>
-<summary><b>不需要平台 Key，只要备份功能</b></summary>
+<summary><b>不需要后端兜底，只要备份功能</b></summary>
 
-不配置 `PLATFORM_API_KEY` 时应用保持原版行为（用户在设置页自己填 Key），但备份功能依然可用：
+不配置 `DEFAULT_API_KEY` 时应用保持原版行为（用户在设置页自己填 Key），但备份功能依然可用：
 
 ```bash
 docker run -d --name image-workbench \
@@ -255,8 +286,9 @@ docker run -d --name image-workbench \
 | Network Type | `Bridge` |
 | Port | 容器 `3000` → 宿主机任意端口（如 `8080`） |
 | Path / Volume | 容器 `/data` → 宿主机持久化目录（Unraid 惯例是 `/mnt/user/appdata/image-workbench`） |
-| Variable | `PLATFORM_API_URL` = 你的上游地址 |
-| Variable | `PLATFORM_API_KEY` = 你的 Key |
+| Variable | `ENABLE_API_PROXY` = `true` |
+| Variable | `API_PROXY_URL` = 你的上游地址 |
+| Variable | `DEFAULT_API_KEY` = 你的 Key |
 
 > [!IMPORTANT]
 > `/data` 的挂载是**必须**的，且要指向宿主机上的持久化目录。不挂载的话容器重建后备份就没了。
@@ -266,9 +298,11 @@ docker run -d --name image-workbench \
 
 ### 方式三：纯静态部署
 
-不部署 Node 服务时，本项目行为与 `88lin/gpt-image-studio` 完全一致：用户自己在设置页填写 API Key，数据只存在浏览器本地。备份相关的界面会自动隐藏。
+不部署 Node 服务时，本项目行为与 `88lin/gpt-image-studio` 完全一致：用户自己在设置页填写 API Key，数据只存在浏览器本地。备份相关的界面会自动隐藏，后端兜底也不参与（没有服务端可以承接代理）。
 
 支持 Vercel、GitHub Pages、Cloudflare Workers，工作流文件均已内置。
+
+纯静态部署下，两个前端开关仍可在**构建前**通过 `VITE_` 变量注入：`VITE_HIDE_API_SETTINGS`、`VITE_LOCK_PRESET_KEY`。但它们只改变界面形态，没有后端提供 Key 时锁住 Key 会导致无人可用的配置——纯静态部署建议不要开启。
 
 **Vercel**：在项目 **Settings → Environment Variables** 中设置 `VITE_DEFAULT_API_URL`，导入仓库即可。
 
@@ -291,7 +325,9 @@ npm test         # 运行测试
 ```
 
 > [!NOTE]
-> 本地开发时 `npm run dev` 没有后端，所以不会出现备份标签、也不会进入平台模式——这是正常行为，方便你调试原版的前端交互。
+> 本地开发时 `npm run dev` 没有后端，所以不会出现备份标签、也没有后端兜底——这是正常行为，方便你调试原版的前端交互。
+>
+> 下面的 Vite 跨域代理只做转发，**不注入 Key**，也无法提供后端兜底。要验证后端兜底请用 `npm start`。
 
 <details>
 <summary><b>本地开发跨域代理（可选）</b></summary>
@@ -324,9 +360,11 @@ Node 服务部署与纯静态部署都支持通过环境变量提供"预置配�
 | `VITE_LOCK_PRESET_CONFIG_PARAMS=true` | `LOCK_PRESET_CONFIG_PARAMS=true` | 锁定预置配置中除 API Key 外的参数，并禁止编辑预置供应商定义 |
 | `VITE_PREVENT_PRESET_CONFIG_DELETION=true` | `PREVENT_PRESET_CONFIG_DELETION=true` | 禁止删除预置配置和预置供应商，不锁定参数 |
 | `VITE_SHOW_PRESET_CONFIG_ONLY=true` | `SHOW_PRESET_CONFIG_ONLY=true` | 只允许使用当前预置配置，禁止创建、复制、删除、拖动、切换供应商 |
+| `VITE_LOCK_PRESET_KEY=true` | `LOCK_PRESET_KEY=true` | 锁定预置配置的 API Key 字段，并清空本地已存的 Key |
+| `VITE_HIDE_API_SETTINGS=true` | `HIDE_API_SETTINGS=true` | 隐藏设置页的「API 配置」标签 |
 
 > [!NOTE]
-> **平台模式下的行为**：配置了 `PLATFORM_API_KEY` 时，上述三个锁定开关的语义会被自动启用（相当于"更强的锁定"），且 API Key 字段不再渲染。
+> `LOCK_PRESET_KEY` 与 `LOCK_PRESET_CONFIG_PARAMS` 是一对互补的开关：后者锁定预置配置中**除 API Key 外**的全部参数，前者**只锁 API Key**。两者都只作用于预置配置，用户自己新建的配置不受影响。
 >
 > 兼容提示：旧变量 `VITE_SHOW_DEFAULT_CONFIG_ONLY`／`SHOW_DEFAULT_CONFIG_ONLY` 仍可使用，等同于对应的 `SHOW_PRESET_CONFIG_ONLY`。
 
@@ -365,7 +403,7 @@ http://<你的部署地址>/?apiUrl={address}&apiKey={key}&model={model}
 ```
 
 > [!NOTE]
-> 平台模式下 `apiKey` 会被强制清空（Key 由服务端注入），此参数不生效。
+> 开启 `LOCK_PRESET_KEY` 时，预置配置的 `apiKey` 会被清空（Key 由后端提供），此参数对预置配置不生效。
 
 **自定义格式供应商**
 
@@ -455,7 +493,7 @@ JSON 结构示例：
 | `name` | 是 | 配置名称，显示在配置列表中。 |
 | `provider` | 是 | 供应商类型：`openai`、`sb2api-async`、`fal`，或 `customProviders` 中定义的自定义供应商 ID。 |
 | `baseUrl` | 是 | API 基地址。末尾带 `/` 时直接拼接接口，不补 `/v1` 前缀。 |
-| `apiKey` | 否 | **建议省略**。平台模式下会被强制清空；非平台模式下让用户导入后自行填写。 |
+| `apiKey` | 否 | 一般建议省略，让用户导入后自行填写。部署端想直接提供 Key 时可填写，但开启 `LOCK_PRESET_KEY` 后会被清空。 |
 | `model` | 是 | 模型 ID。 |
 | `apiMode` | 否 | `images` 或 `responses`，默认 `images`。 |
 | `isDefault` | 否 | 设为 `true` 时作为默认选中的配置。仅有一个配置时自动成为默认。 |

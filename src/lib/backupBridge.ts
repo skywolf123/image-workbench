@@ -95,7 +95,7 @@ function createBackupSink(): RestoreSink {
         },
       )
       if (!plan) return
-      // 设置必须走 setSettings：它内部会再跑一遍预设配置策略，把被剥离的平台字段
+      // 设置必须走 setSettings：它内部会再跑一遍预设配置策略，把被剥离的部署端字段
       // 从预置配置里补齐，而不是让空 baseUrl / 空模型留在 profile 里。
       useStore.getState().setSettings(plan.state.settings)
       useStore.setState({
@@ -148,7 +148,7 @@ export function subscribeBackupServerProbe(listener: () => void) {
   }
 }
 
-/** 探测当前站点上有没有平台服务端；结果缓存在本次会话内，避免反复请求。 */
+/** 探测当前站点上有没有服务端；结果缓存在本次会话内，避免反复请求。 */
 export async function detectBackupServer(): Promise<boolean> {
   if (probedServerUrl !== null) return probedServerUrl !== ''
   const reachable = await probeBackupServer()

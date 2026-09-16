@@ -1,9 +1,9 @@
 import type { AgentConversation, ApiProfile, AppSettings, FavoriteCollection, TaskParams, TaskRecord } from '../types'
 
 /**
- * 备份载荷：平台上自动备份与恢复所用的数据结构。
+ * 备份载荷：自动备份与恢复所用的数据结构。
  *
- * 它与用户手动导出的 ZIP 是两回事：这里只承载「用户数据」，平台级配置（上游地址、
+ * 它与用户手动导出的 ZIP 是两回事：这里只承载「用户数据」，部署端配置（上游地址、
  * API Key、模型、Codex 开关）在打包前就被剥离，永不离开浏览器去服务器。
  */
 export interface BackupPayload {
@@ -34,9 +34,9 @@ function stripDeploymentProfile(profile: ApiProfile): ApiProfile {
 }
 
 /**
- * 剥离平台级配置。
+ * 剥离部署端配置。
  *
- * ⚠️ 平台配置同时存在于两处：settings 的顶层字段，**以及** profiles 数组里每一项的
+ * ⚠️ 部署端配置同时存在于两处：settings 的顶层字段，**以及** profiles 数组里每一项的
  * 同名字段。两处都必须处理，漏掉后者会让 key 从数组里漏进备份。
  */
 export function stripDeploymentConfig(settings: AppSettings): AppSettings {

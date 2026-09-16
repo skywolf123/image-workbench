@@ -165,7 +165,7 @@ export async function memberExistsOnServer(config: BackupConfig, fetchImpl: type
 }
 
 /**
- * 探测这个地址上有没有平台服务端。
+ * 探测这个地址上有没有服务端。
  *
  * 决定「要不要显示成员码与同步」：纯静态部署（GitHub Pages / Vercel / Cloudflare）下
  * 这个请求会 404 或失败，备份那一整套 UI 就不该出现。所以要一个专门且**便宜**的端点：
