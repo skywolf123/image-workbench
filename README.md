@@ -316,18 +316,18 @@ docker run -d --name image-workbench \
 ### 方式四：本地开发
 
 ```bash
-npm install
+pnpm install
 
-npm run dev      # 仅前端（Vite），行为等同于纯静态部署
-npm run build    # 构建前端产物到 dist/
-npm start        # 启动 Node 服务，托管 dist/ 并提供代理与备份
-npm test         # 运行测试
+pnpm run dev      # 仅前端（Vite），行为等同于纯静态部署
+pnpm run build    # 构建前端产物到 dist/
+pnpm start        # 启动 Node 服务，托管 dist/ 并提供代理与备份
+pnpm test         # 运行测试
 ```
 
 > [!NOTE]
-> 本地开发时 `npm run dev` 没有后端，所以不会出现备份标签、也没有后端兜底——这是正常行为，方便你调试原版的前端交互。
+> 本地开发时 `pnpm run dev` 没有后端，所以不会出现备份标签、也没有后端兜底——这是正常行为，方便你调试原版的前端交互。
 >
-> 下面的 Vite 跨域代理只做转发，**不注入 Key**，也无法提供后端兜底。要验证后端兜底请用 `npm start`。
+> 下面的 Vite 跨域代理只做转发，**不注入 Key**，也无法提供后端兜底。要验证后端兜底请用 `pnpm start`。
 
 <details>
 <summary><b>本地开发跨域代理（可选）</b></summary>

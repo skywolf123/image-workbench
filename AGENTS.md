@@ -6,19 +6,19 @@
 
 - React 19 + Vite + TypeScript 前端应用，使用 Zustand 状态管理、Tailwind CSS 样式。
 - 源码在 `src/`，构建产物由 Vite 生成，不要手动编辑 `dist/`。
-- 包管理器为 npm（有 `package-lock.json`），不要使用 yarn 或 pnpm。
+- 包管理器为 pnpm（有 `pnpm-lock.yaml`），不要使用 npm 或 yarn。
 
 ## 常用命令
 
 | 操作 | 命令 |
 |------|------|
-| 安装依赖 | `npm install` |
-| 开发服务器 | `npm run dev` |
-| 构建 | `npm run build` |
-| 启动服务端 | `npm start`（托管 `dist/`，提供代理与备份） |
-| 运行测试 | `npm test` |
-| 监听测试 | `npm run test:watch` |
-| 模拟上游 API | `npm run mock:api`（本地调试代理用，默认 8787 端口） |
+| 安装依赖 | `pnpm install` |
+| 开发服务器 | `pnpm run dev` |
+| 构建 | `pnpm run build` |
+| 启动服务端 | `pnpm start`（托管 `dist/`，提供代理与备份） |
+| 运行测试 | `pnpm test` |
+| 监听测试 | `pnpm run test:watch` |
+| 模拟上游 API | `pnpm run mock:api`（本地调试代理用，默认 8787 端口） |
 
 - 测试使用 Vitest，已有多个 `*.test.ts` 文件。
 - 不要新增 lint/formatter 配置文件，除非明确要求。
@@ -170,7 +170,7 @@ else params = baseParams
   - `public/sw.js` 的 `CACHE_NAME` 版本，确保旧缓存能够在 Service Worker 激活时清理。
   - `RELEASE.md` 标题中的版本号和日期。
 - 更新后全局搜索旧版本号，确认没有遗漏仍需同步的位置；历史发布记录中的旧版本号不需要修改。
-- 发布前运行 `npm run build` 和 `npm test`，并复查最终差异。
+- 发布前运行 `pnpm run build` 和 `pnpm test`，并复查最终差异。
 
 ## 架构约束
 
@@ -191,7 +191,7 @@ else params = baseParams
   - 构建产物里的 `__VITE_*_PLACEHOLDER__` 由它在启动时替换，新增开关需同步 `BUNDLE_PLACEHOLDERS`、`deploy/Dockerfile` 与 `deploy/inject-api-url.sh` 三处。
   - 代理转发时前端的 `Authorization` 优先，只有为空才回落到 `DEFAULT_API_KEY`。
 - 前端配置与后端兜底是两条独立的路：上游的预置配置机制（`DEFAULT_API_URL`、`LOCK_PRESET_CONFIG_PARAMS` 等）不要动其语义；后端兜底只在 `/api-proxy/*` 上补前端没提供的部分。
-- 修改完成后优先运行 `npm run build` 验证编译，再运行 `npm test` 验证测试。
+- 修改完成后优先运行 `pnpm run build` 验证编译，再运行 `pnpm test` 验证测试。
 
 ## Agent skills
 

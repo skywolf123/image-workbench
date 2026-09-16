@@ -1,13 +1,14 @@
 {
   "name": "image-workbench",
   "private": true,
-  "version": "0.7.12",
+  "packageManager": "pnpm@11.7.0",
+  "version": "0.7.12-iw01",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "mock:api": "node scripts/mock-image-api.mjs",
     "build": "tsc -b && vite build",
-    "deploy:cf": "npm run build && wrangler deploy",
+    "deploy:cf": "pnpm run build && wrangler deploy",
     "preview": "vite preview",
     "start": "node server/index.mjs",
     "test": "vitest run",

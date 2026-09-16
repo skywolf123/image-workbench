@@ -15,11 +15,13 @@ ENV VITE_LOCK_PRESET_KEY=__VITE_LOCK_PRESET_KEY_PLACEHOLDER__
 ENV VITE_HIDE_API_SETTINGS=__VITE_HIDE_API_SETTINGS_PLACEHOLDER__
 ENV VITE_BACKEND_FALLBACK=__VITE_BACKEND_FALLBACK_PLACEHOLDER__
 
-COPY package.json package-lock.json ./
-RUN npm ci
+# corepack 让镜像里的 pnpm 版本跟着 package.json 的 packageManager 走。
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # ---- Production stage ----
 # runtime 由 Node 取代 Nginx：同一个进程既托管静态产物，也接住 /api-proxy/*，并在转发时补上
