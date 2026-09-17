@@ -4,7 +4,7 @@
 
 **可自部署的图片生成工作台**
 
-图片与任务自动备份到你的服务器，浏览器存储被清空后一键取回。
+图片与任务自动同步到你的服务器，多台设备共用一份数据。
 
 </div>
 
@@ -12,7 +12,7 @@
 
 > [!NOTE]
 > 本项目是 [88lin/gpt-image-studio](https://github.com/88lin/gpt-image-studio) 的二次开发版本。
-> 完整继承其全部功能，并在此基础上增加了**后端兜底配置**与**自动备份**两项能力。
+> 完整继承其全部功能，并在此基础上增加了**后端网关**与**多设备同步**两项能力。
 > 同时也保留了纯静态部署（GitHub Pages / Vercel / Cloudflare）的完整能力，此时行为与原版一致。
 
 ---
@@ -23,13 +23,13 @@
 
 ### image-workbench（本项目）
 
-在 `88lin/gpt-image-studio` 基础上，增加了**自部署服务端**与**自动备份**两件事：
+在 `88lin/gpt-image-studio` 基础上，增加了**自部署服务端**与**多设备同步**两件事：
 
-- **自动备份到服务器**：图片、任务、收藏、Agent 会话在后台自动上传到同一容器内的备份服务。浏览器存储被清空后，填入成员码即可一键取回。
-- **成员空间**：一个成员码对应服务器上的一个数据空间，同组成员共用一个码即可共享备份，不同成员之间互不干扰。
+- **多设备同步**：任务与图片在设备和服务器之间自动同步——每次操作后、定时、页面关闭前各一次。换台设备填入同一个成员码，数据就回来了。删除先进入服务器回收站，可还原或彻底清除。
+- **成员空间**：一个成员码对应服务器上的一个数据空间，同组成员共用一个码即共享同一份数据，不同成员之间互不干扰。
 - **浏览器存储持久化申请**：主动向浏览器申请持久化存储权限，降低数据被自动清理的概率。
 - **存储命名隔离**：IndexedDB 与 localStorage 改用本项目自己的名字，与原版即便部署在同一 `host:port` 也不会互相污染（旧数据会自动迁移）。
-- **后端兜底配置**：部署方可在服务端持有 API Key 与上游地址，作为前端配置缺失时的兜底。前端配置优先，只有在用户没有配置、或部署方用开关关掉了前端配置入口时才启用。配合隐藏配置页与锁定 Key 两个开关，可让 Key 完全不出现在前端产物里。
+- **后端网关**：部署方可在服务端持有 API Key 与上游地址，前端没填 Key 的请求经同源 `/api/gateway/` 转发时由服务端注入。前端自己填了 Key 依然优先，配合隐藏配置页与锁定 Key 两个开关，可让 Key 完全不出现在前端产物里。
 
 ### 88lin/gpt-image-studio（上一层）
 
@@ -55,15 +55,15 @@
 
 ### 新增能力
 
-#### 🔐 后端兜底配置
+#### 🔐 后端网关
 
-部署方可以在服务端持有 API Key 与上游地址，作为前端配置缺失时的兜底。请求经同源 `/api-proxy/` 转发时，服务端补上前端没有提供的那部分。
+部署方可以在服务端持有 API Key 与上游地址。前端没填 Key 的请求走同源 `/api/gateway/`，由服务端注入 `GATEWAY_API_KEY` 后转发到 `GATEWAY_API_URL`——Key 与上游地址都只存在于服务端环境变量里。
 
-**前端配置优先**：只要前端填了值就一律使用前端的——无论是用户在设置页填的，还是通过 `DEFAULT_API_URL` 预置进去的。后端只在空缺处兜底。
+**前端配置优先**：填了 Key 的请求不经过网关，按用户自己的配置直连或走用户开启的代理。网关只接住「前端没填 Key」的请求，计费主体跟着 Key 走。
 
 ```bash
--e API_PROXY_URL=https://your-upstream.example.com/v1 \
--e DEFAULT_API_KEY=sk-xxxx
+-e GATEWAY_API_URL=https://your-upstream.example.com/v1 \
+-e GATEWAY_API_KEY=sk-xxxx
 ```
 
 想让 Key 完全不出现在前端，用这两个开关关掉前端配置入口：
@@ -71,37 +71,29 @@
 | 开关 | 作用 |
 |---|---|
 | `HIDE_API_SETTINGS=true` | 隐藏设置页的「API 配置」标签。Agent 配置里的配置选择会收窄到预置项，只剩一条时不可切换。 |
-| `LOCK_PRESET_KEY=true` | 锁定预置配置的 API Key 字段，并清空本地已存的 Key，强制走后端。与上游的 `LOCK_PRESET_CONFIG_PARAMS` 恰好互补——那个锁除 Key 外的全部参数，这个只锁 Key。 |
+| `LOCK_PRESET_KEY=true` | 锁定预置配置的 API Key 字段，并清空本地已存的 Key，强制走网关。与上游的 `LOCK_PRESET_CONFIG_PARAMS` 恰好互补——那个锁除 Key 外的全部参数，这个只锁 Key。 |
 
 - **Key 不进前端**：后端持有的 Key 只存在于 Node 进程的环境变量（或挂载文件）里，构建产物中搜不到
-- **不覆盖上游语义**：上游预置配置的三种填写方式、变更传播、锁定与防删除开关全部原样保留，后端兜底只是另一条路
+- **不覆盖上游语义**：上游预置配置的三种填写方式、变更传播、锁定与防删除开关全部原样保留；上游的 `/api-proxy/` 代理也回归纯转发，不注入任何 Key
 - **纯静态部署不受影响**：不部署 Node 服务时这套机制完全不参与，行为与上游一致
 
-#### 💾 自动备份
+#### 🔄 多设备同步
 
-图片生成后自动上传到同一容器内的备份服务，任务、收藏、Agent 会话以整份快照同步：
+任务与图片在设备和服务器之间双向同步，同步时机覆盖每次操作后、每分钟定时与页面关闭前：
 
-- **后台进行**，不阻塞继续生成
-- **按内容哈希去重**，已备份的图片不会重复上传
-- **服务器只增不删**，本地误删不会波及备份
-- **状态快照原子写入**，进程被中断不会留下损坏文件
-
-#### 🔄 一键同步
-
-浏览器存储被清空后，填入成员码即可把数据取回：
-
-- 同步语义是**用服务器数据替换本地**，本地未备份的内容会丢失（操作前有二次确认）
-- 同步前会先把服务器上的图片全部下载到内存，全部成功后才清空本地——中途失败不会把本地清成半截状态
-- 备份中运行中的任务会被标记为已中断，不会留下永远转圈的僵尸任务
-- 备份中引用到不存在图片的记录会被自动清理
+- **自动进行**，不阻塞继续生成；图片按内容哈希去重，不会重复传输
+- **双向合并**：本地新增推上去，服务器的新内容拉下来；两台设备各自改动同一任务时以较新的一方为准
+- **删除有回收站**：删除任务先进入服务器回收站，其他设备同步后同样删除；回收站里可逐条还原，也可输入成员码彻底清空
+- **断线自愈**：同步失败自动重试；服务器数据损坏丢失时，设备会察觉并把本地内容重新灌回服务器
+- 收藏夹、Agent 会话与设置**暂不同步**，只保存在本机
 
 #### 👥 成员空间
 
 成员码是服务器上的数据空间名字，不含认证语义：
 
 - 首次打开时自动生成一个随机码，可自行修改后告诉同组成员
-- 修改成员码时：服务器上已有该码则同步其数据，没有则新建并把本设备的内容备份过去
-- 成员码不是凭证——后端持有的 Key 不在备份里，即便被猜到也只会看到该成员的图片
+- 修改成员码时：本地内容与那个空间的内容自动合并，没有任何确认弹窗——合并不覆盖、不丢失
+- 成员码不是凭证——后端持有的 Key 不在同步数据里，即便被猜到也只会看到该成员的图片
 
 ### 继承自上游的能力
 
@@ -155,7 +147,7 @@
 
 两种部署形态，**同一份构建产物**，运行期决定：
 
-| 形态 | 后端兜底配置 | 自动备份 | 说明 |
+| 形态 | 后端网关 | 多设备同步 | 说明 |
 |---|:---:|:---:|---|
 | **Node 服务**（推荐） | ✅ | ✅ | 完整能力，一个容器搞定 |
 | 纯静态托管 | ❌ | ❌ | 行为与原版一致，用户自己填配置 |
@@ -163,7 +155,7 @@
 <a id="docker-deployment"></a>
 ### 方式一：Docker 部署（推荐）
 
-**前后端在同一个容器内**——一个 Node 进程同时托管前端静态文件、代理 API 请求、提供备份接口。不需要拆成两个容器。
+**前后端在同一个容器内**——一个 Node 进程同时托管前端静态文件、网关、代理与同步服务。不需要拆成两个容器。
 
 #### 快速开始
 
@@ -171,37 +163,40 @@
 docker run -d --name image-workbench \
   -p 8080:3000 \
   -v /mnt/user/appdata/image-workbench:/data \
-  -e ENABLE_API_PROXY=true \
-  -e API_PROXY_URL=https://your-upstream.example.com/v1 \
-  -e DEFAULT_API_KEY=sk-xxxx \
+  -e GATEWAY_API_URL=https://your-upstream.example.com/v1 \
+  -e GATEWAY_API_KEY=sk-xxxx \
   ghcr.io/skywolf123/image-workbench:latest
 ```
 
 访问 `http://<你的服务器地址>:8080`，首次打开会引导生成成员码。
 
 > [!NOTE]
-> 后端兜底只在请求走同源代理时才起作用，所以要让服务端补 Key 的话，`ENABLE_API_PROXY=true` 不能省。
+> 网关只注入「前端没填 Key」的请求，且这些请求必须走同源 `/api/gateway/`——应用会自动选择路由，无需额外开关。
 
 > [!IMPORTANT]
-> `-v /mnt/user/appdata/image-workbench:/data` 是**必须**的：备份数据落在 `/data`，不挂载的话容器重建后备份就没了。
+> `-v /mnt/user/appdata/image-workbench:/data` 是**必须**的：同步数据落在 `/data`，不挂载的话容器重建后数据就没了。
 
 #### 环境变量
 
-**后端兜底配置**
+**后端网关**
 
 | 变量 | 说明 |
 |------|------|
-| `DEFAULT_API_KEY` | 后端持有的 API Key。前端没填时由代理补上，且不会进入前端产物。 |
-| `DEFAULT_API_KEY_FILE` | 从容器内文件读取上述 Key，避免 `docker inspect` 泄漏。文件不存在或为空时启动失败。 |
+| `GATEWAY_API_KEY` | 网关持有的 API Key。配置后前端没填 Key 的请求自动走网关，由服务端注入；不进前端产物。 |
+| `GATEWAY_API_KEY_FILE` | 从容器内文件读取上述 Key，避免 `docker inspect` 泄漏。文件不存在或为空时启动失败。 |
+| `GATEWAY_API_URL` | 网关转发的上游地址。配置了 Key 但没配它时，网关请求会被拒绝。 |
+
+**代理（上游功能，可选）**
+
+| 变量 | 说明 |
+|------|------|
+| `ENABLE_API_PROXY` | 开启同源 `/api-proxy/` 纯转发代理，转发到 `API_PROXY_URL`。只转发请求，**不注入任何 Key**，供用户在前端自行开启使用。 |
+| `LOCK_API_PROXY` | 强制锁定代理为开启，用户无法关闭。 |
 | `API_PROXY_URL` | 代理转发的上游地址（不自动补 `/v1`）。沿用上游变量名，语义就是「真实地址只存在于这里」。 |
 | `API_URL` | 上游更早的变量名，作为 `API_PROXY_URL` 的兜底保留。**新部署请直接用 `API_PROXY_URL`**——设了它会被视为使用了弃用变量，用户首次打开会收到一条迁移提示。 |
 
-**代理**
-
-| 变量 | 说明 |
-|------|------|
-| `ENABLE_API_PROXY` | 开启同源代理，请求发往 `/api-proxy/` 再转发到 `API_PROXY_URL`。后端兜底依赖它。 |
-| `LOCK_API_PROXY` | 强制锁定代理为开启，用户无法关闭。 |
+> [!WARNING]
+> 旧版本的 `DEFAULT_API_KEY` / `DEFAULT_API_KEY_FILE` 已不再生效。继续设置它们服务端会打印警告，请改用 `GATEWAY_API_KEY` / `GATEWAY_API_KEY_FILE` + `GATEWAY_API_URL`。
 
 **前端配置的开关**
 
@@ -216,11 +211,11 @@ docker run -d --name image-workbench \
 
 | 变量 | 说明 |
 |------|------|
-| `DATA_DIR` | 备份数据目录，默认 `/data`。 |
+| `DATA_DIR` | 同步数据目录，默认 `/data`。 |
 | `HOST` / `PORT` | 监听地址和端口，默认 `0.0.0.0:3000`。 |
 
 > [!WARNING]
-> 开启代理后，任何能访问该服务的人都能让服务器代为请求上游 API。建议仅在局域网或有访问控制（如 IP 白名单）的环境中使用。
+> 开启网关后，任何能访问该服务的人都能用服务端持有的 Key 请求上游 API。建议仅在局域网或有访问控制（如 IP 白名单）的环境中使用。
 
 <details>
 <summary><b>使用密钥文件而非环境变量</b></summary>
@@ -232,9 +227,8 @@ docker run -d --name image-workbench \
   -p 8080:3000 \
   -v /mnt/user/appdata/image-workbench:/data \
   -v /mnt/user/appdata/image-workbench/key.txt:/run/secrets/api_key:ro \
-  -e ENABLE_API_PROXY=true \
-  -e API_PROXY_URL=https://your-upstream.example.com/v1 \
-  -e DEFAULT_API_KEY_FILE=/run/secrets/api_key \
+  -e GATEWAY_API_URL=https://your-upstream.example.com/v1 \
+  -e GATEWAY_API_KEY_FILE=/run/secrets/api_key \
   ghcr.io/skywolf123/image-workbench:latest
 ```
 
@@ -252,18 +246,17 @@ services:
     volumes:
       - /mnt/user/appdata/image-workbench:/data
     environment:
-      - ENABLE_API_PROXY=true
-      - API_PROXY_URL=https://your-upstream.example.com/v1
-      - DEFAULT_API_KEY=sk-xxxx
+      - GATEWAY_API_URL=https://your-upstream.example.com/v1
+      - GATEWAY_API_KEY=sk-xxxx
     restart: unless-stopped
 ```
 
 </details>
 
 <details>
-<summary><b>不需要后端兜底，只要备份功能</b></summary>
+<summary><b>不需要网关，只要同步功能</b></summary>
 
-不配置 `DEFAULT_API_KEY` 时应用保持原版行为（用户在设置页自己填 Key），但备份功能依然可用：
+不配置 `GATEWAY_API_KEY` 时应用保持原版行为（用户在设置页自己填 Key），但同步功能依然可用：
 
 ```bash
 docker run -d --name image-workbench \
@@ -272,7 +265,7 @@ docker run -d --name image-workbench \
   ghcr.io/skywolf123/image-workbench:latest
 ```
 
-用户打开设置页的「备份」标签即可填写成员码开始备份。
+用户打开设置页的「同步」标签填写成员码即可开始同步。
 
 </details>
 
@@ -286,19 +279,18 @@ docker run -d --name image-workbench \
 | Network Type | `Bridge` |
 | Port | 容器 `3000` → 宿主机任意端口（如 `8080`） |
 | Path / Volume | 容器 `/data` → 宿主机持久化目录（Unraid 惯例是 `/mnt/user/appdata/image-workbench`） |
-| Variable | `ENABLE_API_PROXY` = `true` |
-| Variable | `API_PROXY_URL` = 你的上游地址 |
-| Variable | `DEFAULT_API_KEY` = 你的 Key |
+| Variable | `GATEWAY_API_URL` = 你的上游地址 |
+| Variable | `GATEWAY_API_KEY` = 你的 Key |
 
 > [!IMPORTANT]
-> `/data` 的挂载是**必须**的，且要指向宿主机上的持久化目录。不挂载的话容器重建后备份就没了。
+> `/data` 的挂载是**必须**的，且要指向宿主机上的持久化目录。不挂载的话容器重建后同步数据就没了。
 
 > [!NOTE]
 > ghcr.io 的镜像包默认是 **private**。若拉取时提示无权限，在 GitHub 的 Package 设置里改为 public，或在面板中配置 ghcr.io 的登录凭据。
 
 ### 方式三：纯静态部署
 
-不部署 Node 服务时，本项目行为与 `88lin/gpt-image-studio` 完全一致：用户自己在设置页填写 API Key，数据只存在浏览器本地。备份相关的界面会自动隐藏，后端兜底也不参与（没有服务端可以承接代理）。
+不部署 Node 服务时，本项目行为与 `88lin/gpt-image-studio` 完全一致：用户自己在设置页填写 API Key，数据只存在浏览器本地。同步相关的界面会自动隐藏，后端网关也不参与（没有服务端可以承接转发）。
 
 支持 Vercel、GitHub Pages、Cloudflare Workers，工作流文件均已内置。
 
@@ -311,7 +303,7 @@ docker run -d --name image-workbench \
 **Cloudflare Workers**：修改 `wrangler.jsonc` 中的 `name` 后在本地执行构建与部署。Cloudflare 不会在部署后改写静态文件，因此必须**在构建前**设置 `VITE_DEFAULT_API_URL`。
 
 > [!IMPORTANT]
-> **纯静态部署下没有备份能力**。若你需要防止浏览器清理缓存导致数据丢失，请使用 Docker 部署。
+> **纯静态部署下没有同步能力**。若你需要防止浏览器清理缓存导致数据丢失或多设备使用，请使用 Docker 部署。
 
 ### 方式四：本地开发
 
@@ -320,14 +312,14 @@ pnpm install
 
 pnpm run dev      # 仅前端（Vite），行为等同于纯静态部署
 pnpm run build    # 构建前端产物到 dist/
-pnpm start        # 启动 Node 服务，托管 dist/ 并提供代理与备份
+pnpm start        # 启动 Node 服务，托管 dist/ 并提供网关、代理与同步
 pnpm test         # 运行测试
 ```
 
 > [!NOTE]
-> 本地开发时 `pnpm run dev` 没有后端，所以不会出现备份标签、也没有后端兜底——这是正常行为，方便你调试原版的前端交互。
+> 本地开发时 `pnpm run dev` 没有后端，所以不会出现同步标签、也没有网关——这是正常行为，方便你调试原版的前端交互。
 >
-> 下面的 Vite 跨域代理只做转发，**不注入 Key**，也无法提供后端兜底。要验证后端兜底请用 `pnpm start`。
+> 下面的 Vite 跨域代理只做转发，**不注入 Key**，也无法提供同步服务。要验证网关与同步请用 `pnpm start`。
 
 <details>
 <summary><b>本地开发跨域代理（可选）</b></summary>

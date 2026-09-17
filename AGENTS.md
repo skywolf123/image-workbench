@@ -15,7 +15,7 @@
 | 安装依赖 | `pnpm install` |
 | 开发服务器 | `pnpm run dev` |
 | 构建 | `pnpm run build` |
-| 启动服务端 | `pnpm start`（托管 `dist/`，提供代理与备份） |
+| 启动服务端 | `pnpm start`（托管 `dist/`，提供网关、代理与同步） |
 | 运行测试 | `pnpm test` |
 | 监听测试 | `pnpm run test:watch` |
 | 模拟上游 API | `pnpm run mock:api`（本地调试代理用，默认 8787 端口） |
@@ -188,10 +188,12 @@ else params = baseParams
   - 新增 state 字段时，考虑是否需要持久化以及升级路径。
 - `src/lib/apiProfiles.ts` 包含多供应商配置，修改时注意向后兼容。
 - `src/lib/db.ts` 是 IndexedDB 封装层，修改 schema 时需升级 `DB_VERSION` 并处理 `onupgradeneeded`。
-- `server/index.mjs` 是自部署服务端（零第三方依赖），同时承担静态托管、`/api-proxy/*` 转发与备份接口。修改时注意：
+- `server/index.mjs` 是自部署服务端（零第三方依赖），同时承担静态托管、`/api/gateway/*`（注入 `GATEWAY_API_KEY`）、`/api-proxy/*`（上游纯转发，不注入 Key）与 `/api/sync/*`（任务与图片同步、服务端回收站）。修改时注意：
   - 构建产物里的 `__VITE_*_PLACEHOLDER__` 由它在启动时替换，新增开关需同步 `BUNDLE_PLACEHOLDERS`、`deploy/Dockerfile` 与 `deploy/inject-api-url.sh` 三处。
-  - 代理转发时前端的 `Authorization` 优先，只有为空才回落到 `DEFAULT_API_KEY`。
-- 前端配置与后端兜底是两条独立的路：上游的预置配置机制（`DEFAULT_API_URL`、`LOCK_PRESET_CONFIG_PARAMS` 等）不要动其语义；后端兜底只在 `/api-proxy/*` 上补前端没提供的部分。
+  - 网关与代理是两条独立路由：网关只在请求没带 Key 时注入 `GATEWAY_API_KEY`（可配 `GATEWAY_API_KEY_FILE`），上游地址是 `GATEWAY_API_URL`；代理维持上游语义，Key 由前端提供。旧的 `DEFAULT_API_KEY` 已不生效，检测到只打印迁移警告。
+  - 同步按成员码隔离（`X-Member-Id`），每个成员一份 `state.json`（原子写入）与图片目录；删除是任务级回收站，还原/清空走 `/api/sync/trash/*`。
+- 前端配置与后端网关是两条独立的路：上游的预置配置机制（`DEFAULT_API_URL`、`LOCK_PRESET_CONFIG_PARAMS` 等）不要动其语义；网关只接住「前端没填 Key」的请求（`src/lib/devProxy.ts` 的 `resolveApiTransport` 判定顺序：网关 > 代理 > 直连，顺序是老部署迁移的关键，见 `docs/adr/0002-*`）。
+- 同步引擎在 `src/lib/syncEngine.ts`（意图队列、合并、图片对账），接线在 `src/lib/syncBridge.ts`。待推送意图与已知集必须按成员码分键持久化，跨成员泄漏会把本地数据误判为「远端已删除」而清掉。
 - 修改完成后优先运行 `pnpm run build` 验证编译，再运行 `pnpm test` 验证测试。
 
 ## Agent skills
