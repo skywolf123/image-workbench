@@ -170,6 +170,7 @@ else params = baseParams
   - `public/sw.js` 的 `CACHE_NAME` 版本，确保旧缓存能够在 Service Worker 激活时清理。
   - `RELEASE.md` 标题中的版本号和日期。
 - `pnpm-lock.yaml` 不记录根包版本，无需同步（此前 AGENTS.md 写的 `package-lock.json` 已随 npm 一并移除）。
+- 发布时必须打 annotated tag 并推送（如 `v0.7.12-iw04`，与版本号一致，加 `v` 前缀）：`.github/workflows/docker.yml` 只在 push `v*` tag 或手动触发时构建并发布 ghcr.io 镜像，只推提交不会出新镜像。
 - 更新后全局搜索旧版本号，确认没有遗漏仍需同步的位置；历史发布记录中的旧版本号不需要修改。
 - 发布前运行 `pnpm run build` 和 `pnpm test`，并复查最终差异。
 
