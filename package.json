@@ -2,7 +2,7 @@
   "name": "image-workbench",
   "private": true,
   "packageManager": "pnpm@11.7.0",
-  "version": "0.7.12-iw04",
+  "version": "0.7.12-iw05",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -38,6 +38,7 @@
     "autoprefixer": "^10.4.21",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.3",
+    "sharp": "^0.35.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "vite": "^6.3.2",

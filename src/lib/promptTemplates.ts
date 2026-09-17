@@ -104,6 +104,7 @@ export interface PromptTemplate {
   recommendedSize: string
   imageUrl?: string
   imageAlt?: string
+  thumbnailUrl?: string
   prompt: string
   tips: string[]
 }
@@ -503,6 +504,22 @@ function normalizeGithubImageUrl(url?: string) {
   }
 
   return url
+}
+
+// 缩略图文件名与 scripts/generateTemplateThumbs.mjs 的 thumbFilename 保持一致
+function getTemplateThumbnailHash(url: string) {
+  let hash = 0x811c9dc5
+  for (let idx = 0; idx < url.length; idx += 1) {
+    hash ^= url.charCodeAt(idx)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return `t-${hash.toString(16)}-${url.length}`
+}
+
+function getTemplateThumbnailUrl(imageUrl?: string) {
+  if (!imageUrl) return undefined
+  // 缩略图缺失（未跑生成脚本或源图已下架）时会 404，由组件回退加载原图
+  return `${import.meta.env.BASE_URL}templates/${getTemplateThumbnailHash(imageUrl)}.webp`
 }
 
 function chineseCharacterRatio(text: string) {
@@ -933,6 +950,8 @@ function normalizeTemplate(template: PromptTemplateInput): PromptTemplate {
         ? buildChineseFallbackPrompt({ ...overriddenTemplate, prompt: sourcePrompt, description })
         : extendShortPrompt(sourcePrompt)
 
+  const imageUrl = normalizeGithubImageUrl(overriddenTemplate.imageUrl)
+
   return {
     ...overriddenTemplate,
     title: override?.title ?? localizeTitle(overriddenTemplate),
@@ -941,7 +960,8 @@ function normalizeTemplate(template: PromptTemplateInput): PromptTemplate {
     prompt,
     subcategory,
     tags: Array.from(new Set(overriddenTemplate.tags.filter(Boolean))),
-    imageUrl: normalizeGithubImageUrl(overriddenTemplate.imageUrl),
+    imageUrl,
+    thumbnailUrl: getTemplateThumbnailUrl(imageUrl),
   }
 }
 

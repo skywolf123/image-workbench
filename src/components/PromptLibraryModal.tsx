@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import {
   BUILT_IN_PROMPT_TEMPLATES,
@@ -14,7 +14,7 @@ import { copyTextToClipboard, getClipboardFailureMessage } from '../lib/clipboar
 import { useStore } from '../store'
 import { useCloseOnEscape } from '../hooks/useCloseOnEscape'
 import { usePreventBackgroundScroll } from '../hooks/usePreventBackgroundScroll'
-import { CloseIcon, CopyIcon } from './icons'
+import { CloseIcon, CopyIcon, RefreshIcon } from './icons'
 
 const ALL_CATEGORY = '全部' as const
 type CategoryFilter = typeof ALL_CATEGORY | PromptTemplateCategory
@@ -81,17 +81,35 @@ function ZoomInIcon() {
 
 function TemplatePreviewImage({
   src,
+  fallbackSrc,
   alt,
   className = '',
   fit = 'cover',
   sizing = 'fill',
+  width,
+  height,
+  onClick,
 }: {
   src?: string
+  fallbackSrc?: string
   alt?: string
   className?: string
   fit?: 'cover' | 'contain'
   sizing?: 'fill' | 'intrinsic'
+  width?: number
+  height?: number
+  onClick?: (event: ReactMouseEvent<HTMLImageElement>) => void
 }) {
+  const [activeSrc, setActiveSrc] = useState(src)
+  const [failed, setFailed] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+
+  useEffect(() => {
+    setActiveSrc(src)
+    setFailed(false)
+    setRetryCount(0)
+  }, [src, fallbackSrc])
+
   if (!src) {
     return (
       <div className={`flex items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 text-xs text-zinc-400 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-500 ${className}`}>
@@ -100,12 +118,51 @@ function TemplatePreviewImage({
     )
   }
 
+  // 加载失败展示占位块，点击后带 cache-buster 重试；外层卡片可聚焦，这里用 div 避免嵌套交互元素
+  if (failed) {
+    const retry = () => {
+      setRetryCount((count) => count + 1)
+      setFailed(false)
+    }
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={retry}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            retry()
+          }
+        }}
+        title="加载失败，点击重试"
+        aria-label="重新加载示例图"
+        className={`flex min-h-[96px] min-w-[160px] cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600 dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-zinc-500 dark:hover:text-zinc-300 ${className}`}
+      >
+        <RefreshIcon className="h-5 w-5" />
+        <span className="text-[11px]">点击重试</span>
+      </div>
+    )
+  }
+
+  const displaySrc = activeSrc ?? src
+  // 重试时追加查询参数，绕过可能已缓存的失败响应
+  const imageSrc = retryCount > 0 ? `${displaySrc}${displaySrc.includes('?') ? '&' : '?'}iw-retry=${retryCount}` : displaySrc
+
   return (
     <img
-      src={src}
+      key={imageSrc}
+      src={imageSrc}
+      width={width}
+      height={height}
       alt={alt ?? ''}
       loading="lazy"
       decoding="async"
+      onClick={onClick}
+      onError={() => {
+        if (fallbackSrc && displaySrc !== fallbackSrc) setActiveSrc(fallbackSrc)
+        else setFailed(true)
+      }}
       className={`block ${sizing === 'fill' ? 'w-full' : 'h-auto max-w-full'} ${fit === 'cover' ? 'object-cover' : 'object-contain'} ${className}`}
     />
   )
@@ -154,13 +211,7 @@ function TemplateDetailPanel({
       </div>
 
       {template.imageUrl ? (
-        <button
-          type="button"
-          onClick={() => onZoom(template)}
-          className="group relative flex w-fit max-w-full self-center overflow-hidden rounded-3xl border border-zinc-200/70 bg-zinc-50 shadow-sm transition hover:border-emerald-400/70 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)] focus:outline-none focus:ring-2 focus:ring-emerald-500/40 dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-emerald-300/40"
-          aria-label="放大查看示例图"
-          title="放大查看示例图"
-        >
+        <div className="group relative w-fit max-w-full self-center overflow-hidden rounded-3xl border border-zinc-200/70 bg-zinc-50 shadow-sm transition hover:border-emerald-400/70 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-emerald-300/40">
           <TemplatePreviewImage
             src={template.imageUrl}
             alt={template.imageAlt ?? template.title}
@@ -170,10 +221,16 @@ function TemplateDetailPanel({
             fit="contain"
             sizing="intrinsic"
           />
-          <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-zinc-950/75 text-white opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 group-focus:opacity-100 dark:bg-white/85 dark:text-zinc-950">
+          <button
+            type="button"
+            onClick={() => onZoom(template)}
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-zinc-950/75 text-white opacity-0 shadow-sm backdrop-blur transition hover:bg-zinc-950 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 group-hover:opacity-100 dark:bg-white/85 dark:text-zinc-950 dark:hover:bg-white"
+            aria-label="放大查看示例图"
+            title="放大查看示例图"
+          >
             <ZoomInIcon />
-          </span>
-        </button>
+          </button>
+        </div>
       ) : (
         <div className="overflow-hidden rounded-3xl border border-zinc-200/70 bg-zinc-50 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03]">
           <TemplatePreviewImage
@@ -615,12 +672,20 @@ export default function PromptLibraryModal() {
                     const showSubcategoryBadge = template.subcategory !== template.category
 
                     return (
-                      <button
+                      <div
                         key={template.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => {
                           setSelectedId(template.id)
                           if (isMobile) setMobileDetailId(template.id)
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            setSelectedId(template.id)
+                            if (isMobile) setMobileDetailId(template.id)
+                          }
                         }}
                         className={`group flex min-h-[206px] flex-col rounded-2xl border p-4 text-left transition ${
                           selected
@@ -630,9 +695,12 @@ export default function PromptLibraryModal() {
                       >
                         <div className="mb-3 grid grid-cols-[118px_minmax(0,1fr)] gap-3">
                           <TemplatePreviewImage
-                            src={template.imageUrl}
+                            src={template.thumbnailUrl ?? template.imageUrl}
+                            fallbackSrc={template.imageUrl}
                             alt={template.imageAlt ?? template.title}
-                            className="h-[118px] rounded-2xl"
+                            className="h-[118px] rounded-2xl bg-zinc-100 dark:bg-white/[0.05]"
+                            width={118}
+                            height={118}
                           />
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -665,7 +733,7 @@ export default function PromptLibraryModal() {
                             </span>
                           ))}
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -732,10 +800,12 @@ export default function PromptLibraryModal() {
           >
             <CloseIcon className="h-5 w-5" />
           </button>
-          <img
+          <TemplatePreviewImage
             src={zoomImage.src}
             alt={zoomImage.alt}
             className="max-h-[90vh] max-w-[94vw] rounded-2xl object-contain shadow-[0_28px_90px_rgba(0,0,0,0.45)]"
+            fit="contain"
+            sizing="intrinsic"
             onClick={(event) => event.stopPropagation()}
           />
         </div>
