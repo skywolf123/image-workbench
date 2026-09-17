@@ -1,32 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  applyBackupConfig,
+  applySyncConfig,
   createMemberId,
-  detectBackupServer,
-  isBackupServerProbed,
+  detectSyncServer,
+  isSyncServerProbed,
   needsMemberIdOnboarding,
-  resetBackupServerProbe,
-} from './backupBridge'
-import { DEFAULT_BACKUP_CONFIG, readBackupConfig } from './backupConfig'
+  resetSyncBridgeForTests,
+  resetSyncServerProbe,
+} from './syncBridge'
+import { DEFAULT_SYNC_CONFIG, readSyncConfig } from './syncConfig'
 
-// backupBridge 会把 store 与存储层一起拖进来，这里只验证引导与探测这两层的可观察行为。
+// syncBridge 会把 store 与存储层一起拖进来，这里只验证引导与探测这两层的可观察行为。
 vi.mock('../store', () => ({
   useStore: {
-    getState: () => ({ showToast: () => {}, setSettings: () => {}, setState: () => {}, setTasks: () => {} }),
+    getState: () => ({ showToast: () => {}, tasks: [], favoriteCollections: [] }),
     setState: () => {},
     subscribe: () => () => {},
   },
 }))
 vi.mock('./db', () => ({
   getAllImageIds: async () => [],
-  getAllTasks: async () => [],
   getImage: async () => undefined,
   putImage: async () => {},
-  putTask: async () => {},
-  clearImages: async () => {},
-  clearTasks: async () => {},
-  clearAgentConversations: async () => {},
+  commitTaskDeletion: async () => {},
   setImageStoredHook: () => {},
+  getSyncValue: async () => null,
+  setSyncValue: async () => {},
+  removeSyncValue: async () => {},
 }))
 vi.mock('./persistedState', () => ({ normalizePersistedState: () => null }))
 
@@ -52,13 +52,14 @@ function stubServerReachable(reachable: boolean) {
 
 beforeEach(() => {
   installMemoryStorage()
-  vi.stubGlobal('window', { location: { origin: 'http://nas.local:3000' }, crypto: globalThis.crypto })
-  resetBackupServerProbe()
+  vi.stubGlobal('window', { location: { origin: 'http://nas.local:3000' }, crypto: globalThis.crypto, addEventListener: () => {} })
+  vi.stubGlobal('document', { visibilityState: 'visible', addEventListener: () => {} })
+  resetSyncBridgeForTests()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  resetBackupServerProbe()
+  resetSyncBridgeForTests()
 })
 
 describe('成员码生成', () => {
@@ -81,68 +82,81 @@ describe('服务器探测', () => {
       return new Response(JSON.stringify({ ok: true }), { status: 200 })
     })
 
-    expect(await detectBackupServer()).toBe(true)
-    expect(await detectBackupServer()).toBe(true)
+    expect(await detectSyncServer()).toBe(true)
+    expect(await detectSyncServer()).toBe(true)
     expect(calls).toBe(1)
   })
 
   it('探测不到时返回不可用，不抛错', async () => {
     stubServerReachable(false)
 
-    expect(await detectBackupServer()).toBe(false)
-    expect(isBackupServerProbed()).toBe(true)
+    expect(await detectSyncServer()).toBe(false)
+    expect(isSyncServerProbed()).toBe(true)
   })
 
-  it('服务器地址填了但连不上时也不抛错', async () => {
-    applyBackupConfig({ memberId: 'member-a' })
+  it('成员码配置了但连不上服务器时也不抛错', async () => {
+    applySyncConfig({ memberId: 'member-a' })
     vi.stubGlobal('fetch', async () => { throw new Error('ECONNREFUSED') })
 
-    expect(await detectBackupServer()).toBe(false)
+    expect(await detectSyncServer()).toBe(false)
   })
 })
 
-describe('备份地址由部署决定，不是用户设置', () => {
-  it('始终按当前站点探测——应用与备份服务同源', async () => {
+describe('同步地址由部署决定，不是用户设置', () => {
+  it('始终按当前站点探测——应用与同步服务同源', async () => {
     let requested = ''
     vi.stubGlobal('fetch', async (url: string) => {
       requested = url
       return new Response(JSON.stringify({ ok: true }), { status: 200 })
     })
 
-    expect(await detectBackupServer()).toBe(true)
-    expect(requested).toBe('http://nas.local:3000/api/backup/ping')
+    expect(await detectSyncServer()).toBe(true)
+    expect(requested).toBe('http://nas.local:3000/api/sync/ping')
   })
 
   it('用户配置里根本没有地址这一项', () => {
-    expect(Object.keys(DEFAULT_BACKUP_CONFIG)).toEqual(['memberId'])
+    expect(Object.keys(DEFAULT_SYNC_CONFIG)).toEqual(['memberId'])
   })
 })
 
 describe('首次引导的出现条件', () => {
   it('探到服务器且没有成员码时出现', async () => {
     stubServerReachable(true)
-    await detectBackupServer()
+    await detectSyncServer()
 
     expect(needsMemberIdOnboarding()).toBe(true)
   })
 
   it('探不到服务器时永不出现——纯静态部署下这套 UI 不该露面', async () => {
     stubServerReachable(false)
-    await detectBackupServer()
+    await detectSyncServer()
 
     expect(needsMemberIdOnboarding()).toBe(false)
   })
 
   it('探测还没回来时不出现，避免弹窗闪一下又消失', () => {
-    expect(isBackupServerProbed()).toBe(false)
+    expect(isSyncServerProbed()).toBe(false)
     expect(needsMemberIdOnboarding()).toBe(false)
   })
 
   it('已有成员码时不再引导', async () => {
     stubServerReachable(true)
-    applyBackupConfig({ memberId: 'already-set' })
-    await detectBackupServer()
+    applySyncConfig({ memberId: 'already-set' })
+    await detectSyncServer()
 
     expect(needsMemberIdOnboarding()).toBe(false)
+  })
+})
+
+describe('旧备份配置键的迁移', () => {
+  it('新键还没有值时读旧键，保存后迁移到新键', () => {
+    const storage = installMemoryStorage()
+    storage.set('image-workbench.backup-config', JSON.stringify({ memberId: 'legacy-member' }))
+
+    expect(readSyncConfig().memberId).toBe('legacy-member')
+
+    applySyncConfig({ memberId: 'legacy-member' })
+    expect(storage.get('image-workbench.sync-config')).toBeTruthy()
+    expect(storage.has('image-workbench.backup-config')).toBe(false)
   })
 })

@@ -2,11 +2,13 @@ import type { AgentConversation, TaskRecord, StoredImage, StoredImageThumbnail }
 import { STORAGE_NAME } from './storageNamespace'
 
 const DB_NAME = STORAGE_NAME
-const DB_VERSION = 3
+const DB_VERSION = 4
 const STORE_TASKS = 'tasks'
 const STORE_IMAGES = 'images'
 const STORE_THUMBNAILS = 'thumbnails'
 const STORE_AGENT_CONVERSATIONS = 'agentConversations'
+/** 同步引擎的元数据（待推送意图、已知任务 id 集），键值形。 */
+const STORE_SYNC_STATE = 'syncState'
 const THUMBNAIL_MAX_SIZE = 720
 const THUMBNAIL_QUALITY = 0.9
 const THUMBNAIL_VERSION = 2
@@ -25,6 +27,9 @@ export function createObjectStores(db: IDBDatabase) {
   }
   if (!db.objectStoreNames.contains(STORE_AGENT_CONVERSATIONS)) {
     db.createObjectStore(STORE_AGENT_CONVERSATIONS, { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains(STORE_SYNC_STATE)) {
+    db.createObjectStore(STORE_SYNC_STATE, { keyPath: 'key' })
   }
 }
 
@@ -52,6 +57,24 @@ function dbTransaction<T>(
         req.onerror = () => reject(req.error)
       }),
   )
+}
+
+// ===== Sync state（同步元数据）=====
+
+/** 同步引擎的持久化元数据走这个键值仓：待推送意图、已知任务 id 集。 */
+export function getSyncValue<T>(key: string): Promise<T | null> {
+  return dbTransaction(STORE_SYNC_STATE, 'readonly', (s) => s.get(key)).then((entry) =>
+    entry ? (entry as { value: T }).value : null,
+  )
+}
+
+export function setSyncValue(key: string, value: unknown): Promise<undefined> {
+  return dbTransaction(STORE_SYNC_STATE, 'readwrite', (s) => s.put({ key, value })).then(() => undefined)
+}
+
+/** 退出成员空间时清掉该成员的同步元数据，避免陈旧意图在重进同一空间后复活。 */
+export function removeSyncValue(key: string): Promise<undefined> {
+  return dbTransaction(STORE_SYNC_STATE, 'readwrite', (s) => s.delete(key)).then(() => undefined)
 }
 
 // ===== Tasks =====

@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CloseIcon } from './icons'
 import { useStore } from '../store'
-import { adoptMemberId, createMemberId, needsMemberIdOnboarding, subscribeBackupServerProbe } from '../lib/backupBridge'
+import { adoptMemberId, createMemberId, needsMemberIdOnboarding, subscribeSyncServerProbe } from '../lib/syncBridge'
 
 /**
  * 首次打开时的成员码引导。
  *
  * 成员码是这台设备在服务器上的数据空间名字，需要用户看到并告知同组成员，所以在这里
- * **展示**而不是静默生成。确认后：服务器上已有这个码就同步一次把数据取回来，没有就
- * 新建并把本地内容备份到这个码下。
+ * **展示**而不是静默生成。确认后本地内容推上去、服务器的活跃集拉下来，两边取并集。
  *
- * 只有探到备份服务器时才会出现——探不到说明是纯静态部署，这套东西不该露面。
+ * 只有探到同步服务器时才会出现——探不到说明是纯静态部署，这套东西不该露面。
  */
 export default function MemberIdOnboardingModal() {
   const setConfirmDialog = useStore((s) => s.setConfirmDialog)
@@ -21,7 +20,7 @@ export default function MemberIdOnboardingModal() {
   const [submitting, setSubmitting] = useState(false)
 
   // 探测是异步的：结果回来时才知道该不该显示。
-  useEffect(() => subscribeBackupServerProbe(() => setVisible(needsMemberIdOnboarding())), [])
+  useEffect(() => subscribeSyncServerProbe(() => setVisible(needsMemberIdOnboarding())), [])
 
   if (dismissed || !visible) return null
 
@@ -34,13 +33,11 @@ export default function MemberIdOnboardingModal() {
     if (submitting) return
     setSubmitting(true)
     try {
-      const result = await adoptMemberId(memberId)
-      done(result === 'synced'
-        ? '成员码已启用，服务器上的数据已同步到本地。'
-        : '成员码已启用，设备上的内容已备份到这个码下。')
+      await adoptMemberId(memberId)
+      done('成员码已启用，本设备的内容已开始与服务器同步。')
     } catch {
       // 同步失败的细节会以 toast 与设置面板里的状态呈现，这里只说明下一步该做什么。
-      done('成员码已保存，但服务器同步失败。可稍后在设置的备份标签页点「同步」重试。')
+      done('成员码已保存，但这次同步失败。可稍后在设置的同步标签页点「立即同步」重试。')
     } finally {
       setSubmitting(false)
     }

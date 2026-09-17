@@ -7,12 +7,12 @@ import 'katex/dist/katex.min.css'
 import './index.css'
 import { installMobileViewportGuards } from './lib/viewport'
 import { requestPersistentStorage } from './lib/storagePersistence'
-import { detectBackupServer, initBackup } from './lib/backupBridge'
+import { detectSyncServer, initSync } from './lib/syncBridge'
 
 installMobileViewportGuards()
-initBackup()
-// 探测是异步的：结果既决定首次引导弹窗出不出现，也决定设置页里有没有「备份」标签。
-void detectBackupServer()
+initSync()
+// 探测是异步的：结果既决定首次引导弹窗出不出现，也决定设置页里有没有「同步」标签。
+void detectSyncServer()
 
 if (import.meta.env.PROD) {
   void requestPersistentStorage()

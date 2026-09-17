@@ -4,7 +4,7 @@ import { normalizeBaseUrl } from '../lib/api'
 import { customProviderSupportsNativeTransparentBackground } from '../lib/customProviderCapabilities'
 import { hasActiveDataOperations } from '../lib/dataOperations'
 import { isApiProxyAvailable, isApiProxyLocked, readClientDevProxyConfig } from '../lib/devProxy'
-import { useStore, exportData, importData, clearData, type SettingsTab } from '../store'
+import { useStore, exportData, importData, clearData, removeMultipleTasks, type SettingsTab } from '../store'
 import {
   createDefaultOpenAIProfile,
   DEFAULT_FAL_BASE_URL,
@@ -61,8 +61,10 @@ import { ChevronDownIcon, CloseIcon, CopyIcon, PlusIcon, TrashIcon, ExportIcon, 
 import { TooltipButton } from './TooltipButton'
 import GeneralSettingsTab from './settings/GeneralSettingsTab'
 import AgentSettingsTab from './settings/AgentSettingsTab'
-import BackupSettingsTab from './settings/BackupSettingsTab'
-import { detectBackupServer, hasBackupServer, isBackupServerProbed, resetBackupServerProbe, subscribeBackupServerProbe } from '../lib/backupBridge'
+import SyncSettingsTab from './settings/SyncSettingsTab'
+import { applySyncConfig, detectSyncServer, hasSyncServer, isSyncServerProbed, resetSyncServerProbe, subscribeSyncServerProbe } from '../lib/syncBridge'
+import { isSyncActive, purgeSyncMeta } from '../lib/syncEngine'
+import { readSyncConfig } from '../lib/syncConfig'
 import CustomProviderModal from './settings/CustomProviderModal'
 import ProfileImportUrlModal, { type CopyImportUrlOptions } from './settings/ProfileImportUrlModal'
 import ZipDownloadRouteModal, { ZIP_DOWNLOAD_ROUTE_OPTIONS } from './settings/ZipDownloadRouteModal'
@@ -198,15 +200,17 @@ export default function SettingsModal() {
   const [profileImportUrlTooltipVisible, setProfileImportUrlTooltipVisible] = useState(false)
   const [duplicateProfileTooltipVisible, setDuplicateProfileTooltipVisible] = useState(false)
   const [activeTab, setActiveTab] = useState<SettingsTab>('api')
-  // 有没有备份服务端决定「备份」标签出不出现；探测是异步的，所以订阅它的结果。
-  const [backupServerProbed, setBackupServerProbed] = useState(() => isBackupServerProbed())
-  const [backupServerAvailable, setBackupServerAvailable] = useState(() => hasBackupServer())
+  // 有没有同步服务端决定「同步」标签出不出现；探测是异步的，所以订阅它的结果。
+  const [syncServerProbed, setSyncServerProbed] = useState(() => isSyncServerProbed())
+  const [syncServerAvailable, setSyncServerAvailable] = useState(() => hasSyncServer())
   const [exportConfig, setExportConfig] = useState(true)
   const [exportTasks, setExportTasks] = useState(true)
   const [importConfig, setImportConfig] = useState(true)
   const [importTasks, setImportTasks] = useState(true)
   const [clearConfig, setClearConfig] = useState(true)
   const [clearTasks, setClearTasks] = useState(true)
+  // 「删除所有设备的数据」的可用性依赖本机有没有任务；原始值在 handler 里再取一次。
+  const hasLocalTasks = useStore((s) => s.tasks.length > 0)
   const [isExportingData, setIsExportingData] = useState(false)
   const [isImportingData, setIsImportingData] = useState(false)
   const [isImportingJson, setIsImportingJson] = useState(false)
@@ -364,17 +368,17 @@ export default function SettingsModal() {
   useEffect(() => {
     if (showSettings && settingsTabRequest) setActiveTab(settingsTabRequest)
   }, [settingsTabRequest, showSettings])
-  useEffect(() => subscribeBackupServerProbe(() => {
-    setBackupServerProbed(isBackupServerProbed())
-    setBackupServerAvailable(hasBackupServer())
+  useEffect(() => subscribeSyncServerProbe(() => {
+    setSyncServerProbed(isSyncServerProbed())
+    setSyncServerAvailable(hasSyncServer())
   }), [])
 
   // 打开设置窗口时重探一次：探测本身可能失败（服务器刚起来、网络刚恢复），
-  // 只重置不重探的话，这一次打开设置就会永远看不到备份标签。
+  // 只重置不重探的话，这一次打开设置就会永远看不到同步标签。
   useEffect(() => {
     if (!showSettings) return
-    resetBackupServerProbe()
-    void detectBackupServer()
+    resetSyncServerProbe()
+    void detectSyncServer()
   }, [showSettings])
 
 
@@ -688,10 +692,10 @@ export default function SettingsModal() {
 
   if (!showSettings) return null
   // 探测未完成、或这个部署根本没有备份服务端时，都别停在「备份」标签上（标签本身也不渲染）。
-  const showBackupTab = backupServerProbed && backupServerAvailable
+  const showSyncTab = syncServerProbed && syncServerAvailable
   // 同理：API 配置页被隐藏后，藏起来的标签也不能当落点。
   const hiddenTabFallback = apiSettingsHidden ? 'general' : 'api'
-  const effectiveTab = (activeTab === 'backup' && !showBackupTab) || (activeTab === 'api' && apiSettingsHidden)
+  const effectiveTab = (activeTab === 'sync' && !showSyncTab) || (activeTab === 'api' && apiSettingsHidden)
     ? hiddenTabFallback
     : activeTab
 
@@ -733,11 +737,23 @@ export default function SettingsModal() {
   }
 
   const handleClearAllData = async () => {
+    // 清空任务时顺带退出同步：必须先退（isSyncActive 变 false）再清，
+    // 否则任务消失会被变更捕获当成删除意图推上服务器，动到其他设备的数据。
+    if (clearTasks && isSyncActive()) {
+      purgeSyncMeta()
+      applySyncConfig({ ...readSyncConfig(), memberId: '' })
+    }
     await clearData({ clearConfig, clearTasks })
     const nextDraft = normalizeSettings(useStore.getState().settings)
     setDraft(nextDraft)
     setTimeoutInput(String(getActiveApiProfile(nextDraft).timeout))
     setShowProfileMenu(false)
+  }
+
+  /** 删除所有设备的数据：全部任务走正常删除流程，同步引擎会把它们移入服务器回收站。 */
+  const handleDeleteOnAllDevices = async () => {
+    const taskIds = useStore.getState().tasks.map((task) => task.id)
+    await removeMultipleTasks(taskIds)
   }
 
   const createNewProfile = () => {
@@ -1231,15 +1247,15 @@ export default function SettingsModal() {
                 </svg>
                 数据管理
               </button>
-              {showBackupTab && (
+              {showSyncTab && (
               <button
-                onClick={() => setActiveTab('backup')}
-                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'backup' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
+                onClick={() => setActiveTab('sync')}
+                className={`whitespace-nowrap flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-xl transition-colors ${effectiveTab === 'sync' ? 'bg-white dark:bg-white/[0.08] shadow-sm text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04]'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 0 1-.88-7.903A5 5 0 1 1 15.9 6h.1a5 5 0 0 1 1 9.9M12 12v9m0-9-3 3m3-3 3 3" />
                 </svg>
-                备份
+                同步
               </button>
               )}
               <button
@@ -1283,7 +1299,7 @@ export default function SettingsModal() {
               />
             )}
 
-            {effectiveTab === 'backup' && <BackupSettingsTab />}
+            {effectiveTab === 'sync' && <SyncSettingsTab />}
 
             {effectiveTab === 'api' && (
               <div className="space-y-4">
@@ -1960,7 +1976,9 @@ export default function SettingsModal() {
                     onClick={() =>
                       setConfirmDialog({
                         title: '清空所选数据',
-                        message: `确定要清空所选的数据吗？此操作不可恢复。`,
+                        message: clearTasks && isSyncActive()
+                          ? '将清空本机所选数据，本机同时退出同步（重新填写成员码前不再收发数据）。服务器与其他设备的数据不受影响。此操作不可恢复。'
+                          : `确定要清空所选的数据吗？此操作不可恢复。`,
                         action: () => handleClearAllData(),
                       })
                     }
@@ -1969,6 +1987,26 @@ export default function SettingsModal() {
                   >
                     清空所选数据
                   </button>
+                  {hasSyncServer() && readSyncConfig().memberId && (
+                    <>
+                      <div data-selectable-text className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                        「清空所选数据」只影响本机。要连服务器上的数据一起删，用下面的按钮：任务会先移入服务器回收站，其他设备同步后同样删除；要彻底清除，再到「同步」标签的回收站里清空。
+                      </div>
+                      <button
+                        onClick={() =>
+                          setConfirmDialog({
+                            title: '删除所有设备的数据',
+                            message: `将删除本机全部任务并同步到服务器（移入回收站），其他设备下次同步时这些任务也会消失。确定继续吗？`,
+                            action: () => handleDeleteOnAllDevices(),
+                          })
+                        }
+                        disabled={!hasLocalTasks}
+                        className="w-full rounded-xl bg-red-500 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-red-600 disabled:opacity-50 dark:bg-red-500/90 dark:hover:bg-red-500"
+                      >
+                        删除所有设备的数据
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
