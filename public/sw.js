@@ -1,4 +1,4 @@
-const CACHE_NAME = 'image-workbench-v0.7.12-iw04'
+const CACHE_NAME = 'image-workbench-v0.7.12-iw06'
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './pwa-icon.svg']
 const APP_SHELL_URLS = new Set(APP_SHELL.map((path) => new URL(path, self.registration.scope).href))
 const ASSETS_PATH = new URL('./assets/', self.registration.scope).pathname
@@ -17,6 +17,12 @@ self.addEventListener('activate', (event) => {
     ),
   )
   self.clients.claim()
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('fetch', (event) => {

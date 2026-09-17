@@ -22,6 +22,8 @@ import ImageContextMenu from './components/ImageContextMenu'
 import PromptLibraryModal from './components/PromptLibraryModal'
 import { FavoriteCollectionPickerModal, FavoriteCollectionsView, ManageCollectionsModal } from './components/FavoriteCollections'
 import { useGlobalClickSuppression } from './lib/clickSuppression'
+import UpdateNotification from './components/UpdateNotification'
+import PullToRefresh from './components/PullToRefresh'
 
 let defaultConfigImportStarted = false
 
@@ -160,6 +162,8 @@ export default function App() {
       <MaskEditorModal />
       <ImageContextMenu />
       <PromptLibraryModal />
+      <UpdateNotification />
+      <PullToRefresh />
     </>
   )
 }
