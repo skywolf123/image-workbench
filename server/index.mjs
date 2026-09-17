@@ -2,14 +2,16 @@
 /**
  * 自部署服务端。
  *
- * 一个零第三方依赖的 Node 进程，同时承担三件事：
+ * 一个零第三方依赖的 Node 进程，同时承担四件事：
  *
  * 1. 静态托管构建产物（含 SPA fallback）—— 取代上游容器里的 Nginx。
- * 2. 接管 `/api-proxy/*`，把请求转发到部署配置的上游地址。前端自带 Key 就用前端的，
- *    没带才补上本进程持有的 Key。前端一行不改：上游的代理路径构造已经完整，这里只是换了「谁接住」。
- * 3. 备份用的哑巴 blob 仓库（见下方 backup 段）。
+ * 2. `/api-proxy/*`：上游自带的代理功能，保持纯转发语义——前端自带 Key 原样透传，
+ *    本进程不注入、不拦截，上游的 401 如实到达前端。
+ * 3. `/api/gateway/*`：本部署的网关——转发到 GATEWAY_API_URL，前端没带 Key 时注入
+ *    GATEWAY_API_KEY。是否可用只由 GATEWAY_API_KEY 决定，与 ENABLE_API_PROXY 无关。
+ * 4. `/api/sync/*`：多设备同步的权威端（活跃集合并、回收站、图片仓库）。
  *
- * 后端持有的 Key 只存在于本进程的环境变量（或挂载文件）里，永远不会进入前端产物。
+ * 网关与同步持有的秘密只存在于本进程的环境变量（或挂载文件）里，永远不会进入前端产物。
  *
  * 用法：node server/index.mjs
  */
@@ -20,12 +22,13 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import { createReadStream } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createBackupStore, isValidImageId, isValidMemberId } from './backup.mjs'
+import { createMemberLock, createSyncStore, isValidImageId, isValidMemberId, isValidTaskId } from './sync.mjs'
 
 const defaultDistDir = fileURLToPath(new URL('../dist', import.meta.url))
 
 const PROXY_PREFIX = '/api-proxy'
-const BACKUP_PREFIX = '/api/backup'
+const GATEWAY_PREFIX = '/api/gateway'
+const SYNC_PREFIX = '/api/sync'
 const ALLOWED_PROXY_METHODS = new Set(['POST', 'OPTIONS'])
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
@@ -108,13 +111,13 @@ function readRequestBody(req) {
 
 // ===== 运行期配置 =====
 
-function readApiKeyFile(path) {
+function readKeyFile(path, envName) {
   if (!existsSync(path)) {
-    throw new Error(`DEFAULT_API_KEY_FILE 指向的文件不存在：${path}`)
+    throw new Error(`${envName} 指向的文件不存在：${path}`)
   }
   const key = readFileSync(path, 'utf-8').trim()
   if (!key) {
-    throw new Error(`DEFAULT_API_KEY_FILE 指向的文件为空：${path}`)
+    throw new Error(`${envName} 指向的文件为空：${path}`)
   }
   return key
 }
@@ -145,27 +148,40 @@ export async function resolveServerConfig(options = {}) {
   const env = options.env ?? process.env
   // 旧版 Docker 变量 API_URL 作为兜底值，与上游 migrate-api-env 行为一致。
   const legacyApiUrl = readText(env.API_URL)
-  // API_PROXY_URL 在上游就是「真实地址只存在于这里」的那个变量，容器 runtime 换成 Node 后
-  // 由本进程接手，语义正好就是后端持有的上游地址。
+  // API_PROXY_URL 只属于上游的 /api-proxy，是「真实地址只存在于这里」的那个变量。
   const proxyApiUrl = readText(env.API_PROXY_URL)
-  const apiKeyFile = readText(env.DEFAULT_API_KEY_FILE)
-  const envApiKey = readText(env.DEFAULT_API_KEY)
-  const apiKey = options.apiKey !== undefined ? options.apiKey : apiKeyFile ? readApiKeyFile(apiKeyFile) : envApiKey || null
+  // 网关的地址与 Key 完全独立成套，不复用代理的任何变量。
+  const gatewayApiUrl = readText(options.gatewayApiUrl ?? env.GATEWAY_API_URL)
+  const gatewayKeyFile = readText(env.GATEWAY_API_KEY_FILE)
+  const envGatewayKey = readText(env.GATEWAY_API_KEY)
+  const gatewayApiKey = options.gatewayApiKey !== undefined
+    ? options.gatewayApiKey
+    : gatewayKeyFile ? readKeyFile(gatewayKeyFile, 'GATEWAY_API_KEY_FILE') : envGatewayKey || null
   const apiProxyEnabled = isTruthy(env.ENABLE_API_PROXY)
+
+  // 旧变量改名失效：静默迁移会静默改变计费主体，只提示不代搬。
+  const warnings = []
+  if ((readText(env.DEFAULT_API_KEY) || readText(env.DEFAULT_API_KEY_FILE)) && !gatewayApiKey) {
+    warnings.push('检测到 DEFAULT_API_KEY / DEFAULT_API_KEY_FILE：后端 Key 已改由 GATEWAY_API_KEY / GATEWAY_API_KEY_FILE 提供，请改名后重启。')
+  }
+  if (gatewayApiKey && !gatewayApiUrl) {
+    warnings.push('已配置 GATEWAY_API_KEY 但未配置 GATEWAY_API_URL：网关请求会因缺少转发目标被拒绝。')
+  }
 
   return {
     host: readText(options.host ?? env.HOST) || '0.0.0.0',
     port: Number(options.port ?? env.PORT ?? 3000),
     distDir: resolve(options.distDir ?? (readText(env.DIST_DIR) || defaultDistDir)),
     dataDir: resolve(options.dataDir ?? (readText(env.DATA_DIR) || '/data')),
-    // 后端持有的上游地址。主变量与上游一致，API_URL 只作旧配置的兜底，
-    // 顺序反过来的话，照旧变量配的人会被当成「用了弃用变量」而收到迁移提示。
+    // 上游代理持有的转发地址，只服务 /api-proxy。
     apiUrl: readText(options.apiUrl) || proxyApiUrl || legacyApiUrl,
-    apiKey,
+    gatewayApiUrl,
+    gatewayApiKey,
     proxyTimeoutMs: Number(readText(env.PROXY_TIMEOUT_MS) || 600_000),
+    warnings,
     bundleValues: {
       defaultApiUrl: await resolveDefaultApiUrl(readText(options.defaultApiUrl ?? env.DEFAULT_API_URL)),
-      // 代理开关只由 ENABLE_API_PROXY 决定，与上游语义一致；后端配了 Key 不再隐式打开它。
+      // 代理开关只由 ENABLE_API_PROXY 决定，与上游语义一致；网关配了 Key 不再隐式打开它。
       apiProxyAvailable: apiProxyEnabled ? 'true' : 'false',
       apiProxyLocked: apiProxyEnabled && isTruthy(env.LOCK_API_PROXY) ? 'true' : 'false',
       dockerDeployment: 'true',
@@ -175,8 +191,8 @@ export async function resolveServerConfig(options = {}) {
       presetConfigDeletionPrevented: isTruthy(env.PREVENT_PRESET_CONFIG_DELETION) ? 'true' : 'false',
       presetKeyLocked: isTruthy(env.LOCK_PRESET_KEY) ? 'true' : 'false',
       apiSettingsHidden: isTruthy(env.HIDE_API_SETTINGS) ? 'true' : 'false',
-      // 后端持有 Key 时前端才可以留空。它只放宽校验，不参与锁定——前端填了 Key 依然优先。
-      backendFallback: apiKey ? 'true' : 'false',
+      // 网关持有 Key 时前端才可以留空。它只放宽校验，不参与锁定——前端填了 Key 依然优先。
+      backendFallback: gatewayApiKey ? 'true' : 'false',
     },
   }
 }
@@ -273,24 +289,30 @@ function handleStatic(req, res, config) {
   sendFile(req, res, indexHtml)
 }
 
-// ===== API 代理 =====
+// ===== 转发（上游代理与网关共用传输层） =====
 
-function buildUpstreamTarget(apiUrl, reqUrl) {
-  const rest = reqUrl.slice(PROXY_PREFIX.length + 1)
-  if (!rest) return { error: 'API 代理路径不能为空' }
+function buildUpstreamTarget(apiUrl, reqUrl, prefix, urlEnvName) {
+  const rest = reqUrl.slice(prefix.length + 1)
+  if (!rest) return { error: '转发路径不能为空' }
   try {
     const target = new URL(`${apiUrl.replace(/\/+$/, '')}/${rest}`)
     // 只支持 http/https：其他协议交给对应模块时会抛同步异常。
     if (target.protocol !== 'https:' && target.protocol !== 'http:') {
-      return { error: `API_PROXY_URL 的协议不受支持：${target.protocol}。请填写 http:// 或 https:// 开头的地址。` }
+      return { error: `${urlEnvName} 的协议不受支持：${target.protocol}。请填写 http:// 或 https:// 开头的地址。` }
     }
     return { target }
   } catch {
-    return { error: `代理未配置可用的上游地址，无法转发请求。请为服务端设置 API_PROXY_URL 后重启。（当前值：${apiUrl || '空'}）` }
+    return { error: `未配置可用的上游地址，无法转发请求。请为服务端设置 ${urlEnvName} 后重启。（当前值：${apiUrl || '空'}）` }
   }
 }
 
-function filterRequestHeaders(headers, target, apiKey, remoteAddress) {
+function readBearerToken(header) {
+  if (typeof header !== 'string') return ''
+  const match = /^Bearer\s+(.*)$/i.exec(header.trim())
+  return match ? match[1].trim() : ''
+}
+
+function filterForwardHeaders(headers, target, injectKey, remoteAddress) {
   const filtered = {}
   for (const [name, value] of Object.entries(headers)) {
     if (value === undefined) continue
@@ -298,19 +320,18 @@ function filterRequestHeaders(headers, target, apiKey, remoteAddress) {
     filtered[name] = value
   }
   filtered.host = target.host
-  // 前端带了自己的 Key 就用它的；没带才用后端持有的，这是「前端优先」的落点。
-  // 注意空 Key 时前端仍会发出 `Bearer `，所以要按 token 是否为空判断，而不是按头是否存在。
-  const forwardedToken = readBearerToken(headers.authorization)
-  filtered.authorization = `Bearer ${forwardedToken || apiKey}`
+  if (injectKey) {
+    // 网关：前端带了自己的 Key 就用它的，没带才注入后端持有的。
+    // 注意空 Key 时前端仍会发出 `Bearer `，所以要按 token 是否为空判断，而不是按头是否存在。
+    const forwardedToken = readBearerToken(headers.authorization)
+    filtered.authorization = `Bearer ${forwardedToken || injectKey}`
+  } else if (headers.authorization !== undefined) {
+    // 纯代理：Authorization 原样透传，注入不是这里的事。
+    filtered.authorization = headers.authorization
+  }
   const forwardedFor = [headers['x-forwarded-for'], remoteAddress].filter(Boolean).join(', ')
   if (forwardedFor) filtered['x-forwarded-for'] = forwardedFor
   return filtered
-}
-
-function readBearerToken(header) {
-  if (typeof header !== 'string') return ''
-  const match = /^Bearer\s+(.*)$/i.exec(header.trim())
-  return match ? match[1].trim() : ''
 }
 
 function filterResponseHeaders(headers) {
@@ -322,23 +343,31 @@ function filterResponseHeaders(headers) {
   return filtered
 }
 
-function handleProxy(req, res, config) {
+/**
+ * 两个转发路由的公共实现。
+ *
+ * route.injectKey 为真值时是网关（前端 Key 优先，空则注入）；为空时是纯代理
+ * （Authorization 原样透传，两边都没 Key 不拦，让上游的 401 如实到达前端）。
+ */
+function handleForward(req, res, config, route) {
   if (!ALLOWED_PROXY_METHODS.has(req.method)) {
-    sendError(res, 403, 'API 代理只接受 POST 请求', 'proxy_method_not_allowed')
+    sendError(res, 403, '转发只接受 POST 请求', 'proxy_method_not_allowed')
     return
   }
 
-  const { target, error } = buildUpstreamTarget(config.apiUrl, req.url)
+  const { target, error } = buildUpstreamTarget(route.apiUrl, req.url, route.prefix, route.urlEnvName)
   if (error) {
     sendError(res, 503, error, 'backend_upstream_missing')
     return
   }
-  // 前端自带 Key 时后端不需要持有：这条代理只负责转发和补地址。
-  if (!config.apiKey && !readBearerToken(req.headers.authorization)) {
+
+  const forwardedToken = readBearerToken(req.headers.authorization)
+  // 缺 Key 的拦截只属于网关；纯代理不拦，让上游的 401 如实到达前端。
+  if (route.requireKey && !route.injectKey && !forwardedToken) {
     sendError(
       res,
       503,
-      '代理未收到可用的 API Key。请在设置页填写，或为服务端设置 DEFAULT_API_KEY / DEFAULT_API_KEY_FILE 后重启。',
+      `网关未收到可用的 API Key。请在设置页填写，或为服务端设置 ${route.keyEnvName} / ${route.keyEnvName}_FILE 后重启。`,
       'api_key_missing',
     )
     return
@@ -354,7 +383,7 @@ function handleProxy(req, res, config) {
       port: target.port || (target.protocol === 'https:' ? 443 : 80),
       method: req.method,
       path: `${target.pathname}${target.search}`,
-      headers: filterRequestHeaders(req.headers, target, config.apiKey, req.socket.remoteAddress),
+      headers: filterForwardHeaders(req.headers, target, route.injectKey || null, req.socket.remoteAddress),
     },
     (upstreamRes) => {
       res.writeHead(upstreamRes.statusCode ?? 502, filterResponseHeaders(upstreamRes.headers))
@@ -376,13 +405,13 @@ function handleProxy(req, res, config) {
   req.pipe(upstream)
 }
 
-// ===== 备份 API =====
+// ===== 同步 API =====
 
 /**
  * 成员码只做格式校验后直接用作目录名。
  *
- * 它不承担凭证职责：没有白名单，首次出现的成员码即建立命名空间，后端 Key 也不在备份里，
- * 因此猜到别人的成员码的后果被限制在「看到该成员的图片」，不会升级为 Key 泄漏。
+ * 它不承担凭证职责：没有白名单，首次出现的成员码即建立命名空间，后端 Key 也不在
+ * 同步数据里，因此猜到别人的成员码的后果被限制在「看到该成员的数据」，不会升级为 Key 泄漏。
  */
 function resolveMemberId(req) {
   const raw = req.headers['x-member-id']
@@ -400,11 +429,15 @@ function sendBytes(res, status, contentType, bytes) {
   res.end(bytes)
 }
 
-async function handleBackup(req, res, store) {
-  // 能力探测：前端用它决定要不要显示成员码与同步。放在成员校验之前，
-  // 因为「服务器在不在」与「你是哪个成员」是两回事。
+async function handleSync(req, res, store, runLocked) {
   const routePath = req.url.split('?')[0]
-  if (routePath === `${BACKUP_PREFIX}/ping`) {
+  const segments = routePath.slice(SYNC_PREFIX.length).split('/').filter(Boolean)
+
+  const isSyncPush = segments.length === 0 || (segments[0] === 'sync' && segments.length === 1)
+  // 能力探测：GET /api/sync 与 GET /api/sync/ping 等价。放在成员校验之前，
+  // 因为「服务器在不在」与「你是哪个成员」是两回事；POST /api/sync 是同步推送主路径，不算探测。
+  const isPing = (segments.length === 0 || segments[0] === 'ping') && !isSyncPush
+  if (isPing) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       sendError(res, 405, '只支持 GET 请求', 'method_not_allowed')
       return
@@ -419,63 +452,54 @@ async function handleBackup(req, res, store) {
     return
   }
 
-  const rest = req.url.split('?')[0].slice(BACKUP_PREFIX.length)
-  const segments = rest.split('/').filter(Boolean)
-
   if (segments[0] === 'manifest' && segments.length === 1) {
     if (req.method !== 'GET') {
       sendError(res, 405, '只支持 GET 请求', 'method_not_allowed')
       return
     }
-    const state = store.readState(memberId)
+    const state = store.readActive(memberId)
     sendJson(res, 200, {
       images: store.listImageIds(memberId),
-      state: state ? { version: state.version, updatedAt: state.updatedAt } : null,
+      version: state.version,
+      updatedAt: state.updatedAt,
     })
     return
   }
 
-  if (segments[0] === 'state' && segments.length === 1) {
-    if (req.method === 'GET') {
-      const state = store.readState(memberId)
-      if (!state) {
-        sendError(res, 404, '该成员还没有状态快照', 'state_not_found')
-        return
-      }
-      sendJson(res, 200, state)
+  if (isSyncPush) {
+    if (req.method !== 'POST') {
+      sendError(res, 405, '只支持 POST 请求', 'method_not_allowed')
       return
     }
-    if (req.method === 'PUT') {
-      const expectedHeader = req.headers['if-match']
-      const expectedVersion = expectedHeader === undefined
-        ? null
-        : Number(Array.isArray(expectedHeader) ? expectedHeader[0] : expectedHeader)
-      if (expectedVersion !== null && !Number.isFinite(expectedVersion)) {
-        sendError(res, 400, 'If-Match 必须是状态快照的版本号', 'if_match_invalid')
-        return
-      }
 
-      let payload
-      try {
-        payload = JSON.parse((await readRequestBody(req)).toString('utf-8') || 'null')
-      } catch {
-        sendError(res, 400, '状态快照不是合法的 JSON', 'state_invalid_json')
-        return
-      }
-      if (!payload || typeof payload !== 'object' || !('data' in payload)) {
-        sendError(res, 400, '状态快照缺少 data 字段', 'state_invalid_shape')
-        return
-      }
-
-      const result = store.writeState(memberId, payload.data, expectedVersion)
-      if (result.conflict) {
-        sendError(res, 409, '状态快照版本已变化，请先重新拉取', 'state_version_conflict')
-        return
-      }
-      sendJson(res, 200, { version: result.state.version, updatedAt: result.state.updatedAt })
+    let body
+    try {
+      body = JSON.parse((await readRequestBody(req)).toString('utf-8') || '{}')
+    } catch {
+      sendError(res, 400, '同步请求不是合法的 JSON', 'sync_invalid_json')
       return
     }
-    sendError(res, 405, '只支持 GET / PUT 请求', 'method_not_allowed')
+    const changedTasks = body.changedTasks ?? []
+    const deletedTaskIds = body.deletedTaskIds ?? []
+    if (!Array.isArray(changedTasks) || !Array.isArray(deletedTaskIds)) {
+      sendError(res, 400, 'changedTasks 与 deletedTaskIds 必须是数组', 'sync_body_invalid')
+      return
+    }
+    for (const task of changedTasks) {
+      if (!task || typeof task !== 'object' || !isValidTaskId(task.id)) {
+        sendError(res, 400, '变更任务缺少合法的 id', 'sync_task_invalid')
+        return
+      }
+    }
+    for (const id of deletedTaskIds) {
+      if (!isValidTaskId(id)) {
+        sendError(res, 400, '删除列表里有非法的任务 id', 'sync_task_invalid')
+        return
+      }
+    }
+
+    const { state } = await runLocked(memberId, () => store.mergeSync(memberId, changedTasks, deletedTaskIds))
+    sendJson(res, 200, { version: state.version, updatedAt: state.updatedAt, tasks: state.tasks })
     return
   }
 
@@ -515,32 +539,90 @@ async function handleBackup(req, res, store) {
     return
   }
 
-  sendError(res, 404, `未知的备份接口：${rest}`, 'backup_route_not_found')
+  if (segments[0] === 'trash') {
+    if (segments.length === 1) {
+      if (req.method === 'GET') {
+        const items = await runLocked(memberId, () => store.listTrash(memberId))
+        sendJson(res, 200, { items })
+        return
+      }
+      if (req.method === 'DELETE') {
+        // 清空是不可逆操作，必须原样回输成员码确认。
+        let body
+        try {
+          body = JSON.parse((await readRequestBody(req)).toString('utf-8') || '{}')
+        } catch {
+          body = null
+        }
+        if (!body || body.confirm !== memberId) {
+          sendError(res, 400, '成员码确认不匹配，回收站未清空。', 'confirm_mismatch')
+          return
+        }
+        const removed = await runLocked(memberId, () => store.emptyTrash(memberId))
+        sendJson(res, 200, { removed })
+        return
+      }
+      sendError(res, 405, '只支持 GET / DELETE 请求', 'method_not_allowed')
+      return
+    }
+
+    if (segments.length === 3 && segments[2] === 'restore') {
+      if (req.method !== 'POST') {
+        sendError(res, 405, '只支持 POST 请求', 'method_not_allowed')
+        return
+      }
+      const taskId = segments[1]
+      if (!isValidTaskId(taskId)) {
+        sendError(res, 400, '非法的任务 id', 'task_id_invalid')
+        return
+      }
+      const restored = await runLocked(memberId, () => store.restoreFromTrash(memberId, taskId))
+      if (!restored) {
+        sendError(res, 404, '回收站里没有这个任务', 'trash_entry_not_found')
+        return
+      }
+      sendJson(res, 200, { ok: true, task: restored })
+      return
+    }
+  }
+
+  sendError(res, 404, `未知的同步接口：${routePath.slice(SYNC_PREFIX.length)}`, 'sync_route_not_found')
 }
 
 // ===== 服务实例 =====
 
 export async function createServer(options = {}) {
   const config = await resolveServerConfig(options)
+  for (const warning of config.warnings) console.warn(`[启动] ${warning}`)
   injectBundleConfig(config.distDir, config.bundleValues)
-  const backupStore = options.backupStore ?? createBackupStore(config.dataDir)
+  const syncStore = options.syncStore ?? createSyncStore(config.dataDir)
+  const runLocked = createMemberLock()
 
   const server = http.createServer((req, res) => {
     const urlPath = req.url.split('?')[0]
     if (urlPath === PROXY_PREFIX || urlPath.startsWith(`${PROXY_PREFIX}/`)) {
-      // 兜住同步异常：代理出一个错不该把整个进程带走，其他请求还得继续服务。
+      // 兜住同步异常：转发出一个错不该把整个进程带走，其他请求还得继续服务。
       try {
-        handleProxy(req, res, config)
+        handleForward(req, res, config, { prefix: PROXY_PREFIX, apiUrl: config.apiUrl, injectKey: null, requireKey: false, urlEnvName: 'API_PROXY_URL', keyEnvName: 'GATEWAY_API_KEY' })
       } catch (error) {
         console.error('[proxy] 请求处理失败：', error)
         if (!res.headersSent) sendError(res, 502, `API 代理处理失败：${error.message}`, 'proxy_internal_error')
       }
       return
     }
-    if (urlPath === BACKUP_PREFIX || urlPath.startsWith(`${BACKUP_PREFIX}/`)) {
-      handleBackup(req, res, backupStore).catch((error) => {
-        console.warn('[backup] 请求处理失败：', error)
-        if (!res.headersSent) sendError(res, 500, `备份请求处理失败：${error.message}`, 'backup_internal_error')
+    if (urlPath === GATEWAY_PREFIX || urlPath.startsWith(`${GATEWAY_PREFIX}/`)) {
+      try {
+        handleForward(req, res, config, { prefix: GATEWAY_PREFIX, apiUrl: config.gatewayApiUrl, injectKey: config.gatewayApiKey, requireKey: true, urlEnvName: 'GATEWAY_API_URL', keyEnvName: 'GATEWAY_API_KEY' })
+      } catch (error) {
+        console.error('[gateway] 请求处理失败：', error)
+        if (!res.headersSent) sendError(res, 502, `网关处理失败：${error.message}`, 'gateway_internal_error')
+      }
+      return
+    }
+    if (urlPath === SYNC_PREFIX || urlPath.startsWith(`${SYNC_PREFIX}/`)) {
+      handleSync(req, res, syncStore, runLocked).catch((error) => {
+        console.warn('[sync] 请求处理失败：', error)
+        if (!res.headersSent) sendError(res, 500, `同步请求处理失败：${error.message}`, 'sync_internal_error')
       })
       return
     }
@@ -578,8 +660,9 @@ if (isDirectRun) {
     .then(async (instance) => {
       await instance.listen()
       console.log(`服务已启动：http://${instance.config.host === '0.0.0.0' ? 'localhost' : instance.config.host}:${instance.port}`)
-      console.log(`上游地址：${instance.config.apiUrl || '（未配置，代理请求会被拒绝）'}`)
-      console.log(`备份数据目录：${instance.config.dataDir}`)
+      console.log(`代理上游（/api-proxy）：${instance.config.apiUrl || '（未配置 API_PROXY_URL，代理请求会被拒绝）'}`)
+      console.log(`网关上游（/api/gateway）：${instance.config.gatewayApiUrl || '（未配置 GATEWAY_API_URL，网关请求会被拒绝）'}`)
+      console.log(`同步数据目录：${instance.config.dataDir}`)
     })
     .catch((error) => {
       console.error(`服务启动失败：${error.message}`)

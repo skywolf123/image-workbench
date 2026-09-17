@@ -24,9 +24,9 @@ COPY . .
 RUN pnpm run build
 
 # ---- Production stage ----
-# runtime 由 Node 取代 Nginx：同一个进程既托管静态产物，也接住 /api-proxy/*，并在转发时补上
-# 本进程持有的 Key，顺带提供备份接口。上游的注入脚本与 nginx 配置仍然保留在仓库里，
-# 作为「纯静态 + Nginx」这套部署方案的存档（见 README）。
+# runtime 由 Node 取代 Nginx：同一个进程托管静态产物，提供 /api/gateway/*（注入 GATEWAY_API_KEY）、
+# /api-proxy/*（上游纯转发）与 /api/sync/*（任务与图片同步、服务端回收站）。上游的注入脚本与
+# nginx 配置仍然保留在仓库里，作为「纯静态 + Nginx」这套部署方案的存档（见 README）。
 FROM node:24-alpine
 
 WORKDIR /app
@@ -37,8 +37,9 @@ ENV DATA_DIR=/data
 ENV DIST_DIR=/app/dist
 ENV DEFAULT_API_URL=
 ENV API_URL=
-ENV DEFAULT_API_KEY=
-ENV DEFAULT_API_KEY_FILE=
+ENV GATEWAY_API_KEY=
+ENV GATEWAY_API_KEY_FILE=
+ENV GATEWAY_API_URL=
 ENV API_PROXY_URL=
 ENV ENABLE_API_PROXY=false
 ENV LOCK_API_PROXY=false
