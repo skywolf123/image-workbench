@@ -31,6 +31,7 @@ export default function Lightbox() {
   const inputImages = useStore((s) => s.inputImages)
   const replaceInputImage = useStore((s) => s.replaceInputImage)
   const setMaskEditorImageId = useStore((s) => s.setMaskEditorImageId)
+  const setReferenceEditorTarget = useStore((s) => s.setReferenceEditorTarget)
   const showToast = useStore((s) => s.showToast)
   const replaceFileInputRef = useRef<HTMLInputElement>(null)
   const replaceImageTargetRef = useRef<string | null>(null)
@@ -194,6 +195,14 @@ export default function Lightbox() {
     setMaskEditorImageId(imageId)
   }, [close, isInputImage, lightboxImageId, setMaskEditorImageId])
 
+  const openAdvancedEditor = useCallback(() => {
+    if (!lightboxImageId) return
+    setReferenceEditorTarget({
+      id: lightboxImageId,
+      saveMode: isInputImage ? 'replace-input' : 'append-input',
+    })
+  }, [isInputImage, lightboxImageId, setReferenceEditorTarget])
+
   // 键盘左右切换
   useEffect(() => {
     if (!lightboxImageId || !showNav) return
@@ -219,10 +228,12 @@ export default function Lightbox() {
         total={total}
         onPrev={goPrev}
         onNext={goNext}
-        showInputActions={isInputImage}
+        showInputActions={Boolean(lightboxImageId)}
+        isInputImage={isInputImage}
         editDisabled={Boolean(maskDraft && maskDraft.targetImageId !== lightboxImageId)}
         onReplace={openReplaceFilePicker}
         onEdit={editInputImage}
+        onAdvancedEdit={openAdvancedEditor}
       />
       <input
         ref={replaceFileInputRef}
@@ -246,13 +257,15 @@ interface LightboxInnerProps {
   onPrev: () => void
   onNext: () => void
   showInputActions: boolean
+  isInputImage: boolean
   editDisabled: boolean
   onReplace: () => void
   onEdit: () => void
+  onAdvancedEdit: () => void
 }
 
 /** 内部组件：保证挂载时 DOM 已经存在，所有 ref / effect 都可靠 */
-function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, currentIndex, total, onPrev, onNext, showInputActions, editDisabled, onReplace, onEdit }: LightboxInnerProps) {
+function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, currentIndex, total, onPrev, onNext, showInputActions, isInputImage, editDisabled, onReplace, onEdit, onAdvancedEdit }: LightboxInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef(Date.now())
   const editHint = useHintTooltip({ enabled: () => editDisabled })
@@ -761,33 +774,45 @@ function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, current
       {/* 参考图操作 */}
       {showInputActions && !isZoomed && (
         <div className="absolute bottom-8 left-1/2 z-10 flex w-max -translate-x-1/2 items-center gap-2 rounded-2xl bg-white/90 dark:bg-black/60 p-2 backdrop-blur-xl border border-gray-200/80 dark:border-white/15 shadow-2xl transition-colors" onClick={(e) => e.stopPropagation()}>
+          {isInputImage && (
+            <>
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-white/90 dark:hover:bg-white/15 transition active:scale-95"
+                onClick={onReplace}
+              >
+                <RefreshIcon className="w-4 h-4" />
+                <span>替换图片</span>
+              </button>
+              <div
+                className="relative flex items-center"
+                onMouseEnter={editHint.show}
+                onMouseLeave={editHint.hide}
+                onTouchStart={editHint.startTouch}
+                onTouchEnd={editHint.clearTimer}
+                onTouchCancel={editHint.hide}
+              >
+                <ButtonTooltip visible={editDisabled && editHint.visible} text="只能有一张遮罩图" />
+                <button
+                  type="button"
+                  disabled={editDisabled}
+                  className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium shadow-md transition active:scale-95 ${editDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-white/40 shadow-none' : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-blue-500/25'}`}
+                  onClick={onEdit}
+                >
+                  <EditIcon className="w-4 h-4" />
+                  <span>编辑图片</span>
+                </button>
+              </div>
+            </>
+          )}
           <button
             type="button"
-            className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-white/90 dark:hover:bg-white/15 transition active:scale-95"
-            onClick={onReplace}
+            className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium shadow-md transition active:scale-95 ${isInputImage ? 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-emerald-500/25' : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-blue-500/25'}`}
+            onClick={onAdvancedEdit}
           >
-            <RefreshIcon className="w-4 h-4" />
-            <span>替换图片</span>
+            <EditIcon className="w-4 h-4" />
+            <span>{isInputImage ? '高级编辑' : '高级编辑并加入参考图'}</span>
           </button>
-          <div
-            className="relative flex items-center"
-            onMouseEnter={editHint.show}
-            onMouseLeave={editHint.hide}
-            onTouchStart={editHint.startTouch}
-            onTouchEnd={editHint.clearTimer}
-            onTouchCancel={editHint.hide}
-          >
-            <ButtonTooltip visible={editDisabled && editHint.visible} text="只能有一张遮罩图" />
-            <button
-              type="button"
-              disabled={editDisabled}
-              className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium shadow-md transition active:scale-95 ${editDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-white/40 shadow-none' : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-blue-500/25'}`}
-              onClick={onEdit}
-            >
-              <EditIcon className="w-4 h-4" />
-              <span>编辑图片</span>
-            </button>
-          </div>
         </div>
       )}
 

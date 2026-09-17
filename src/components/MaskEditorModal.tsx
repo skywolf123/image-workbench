@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../store'
@@ -18,6 +18,8 @@ import {
   type Point,
   type ViewTransform,
 } from '../lib/viewportTransform'
+
+const ReferenceImageEditorModal = lazy(() => import('./ReferenceImageEditorModal'))
 
 type Tool = 'brush' | 'eraser'
 
@@ -140,9 +142,11 @@ export default function MaskEditorModal() {
   const [isPanning, setIsPanning] = useState(false)
   const [sliderAnchor, setSliderAnchor] = useState<SliderAnchor | null>(null)
   const [showMaskInfo, setShowMaskInfo] = useState(false)
+  const [referenceEditorSession, setReferenceEditorSession] = useState<{ imageId: string; src: string } | null>(null)
 
   const close = () => {
     if (isSaving) return
+    setReferenceEditorSession(null)
     setMaskEditorImageId(null)
   }
   useCloseOnEscape(Boolean(imageId), close)
@@ -183,6 +187,7 @@ export default function MaskEditorModal() {
       action: () => {
         clearMaskDraft()
         setMaskEditorImageId(null)
+        setReferenceEditorSession(null)
         showToast('已移除遮罩', 'success')
       },
     })
@@ -476,6 +481,7 @@ export default function MaskEditorModal() {
         if (!dataUrl) {
           showToast('图片已不存在，无法编辑遮罩', 'error')
           setMaskEditorImageId(null)
+        setReferenceEditorSession(null)
           return
         }
 
@@ -529,6 +535,7 @@ export default function MaskEditorModal() {
         if (!cancelled) {
           showToast(err instanceof Error ? err.message : String(err), 'error')
           setMaskEditorImageId(null)
+        setReferenceEditorSession(null)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -773,6 +780,11 @@ export default function MaskEditorModal() {
     renderPreview()
   }
 
+  const handleOpenReferenceEditor = () => {
+    if (!imageId || !sourceDataUrl || isLoading || isSaving) return
+    setReferenceEditorSession({ imageId, src: sourceDataUrl })
+  }
+
   const handleSave = async () => {
     const canvas = maskCanvasRef.current
     const savingSessionId = activeSessionIdRef.current
@@ -805,6 +817,7 @@ export default function MaskEditorModal() {
         updatedAt: Date.now(),
       })
       setMaskEditorImageId(null)
+        setReferenceEditorSession(null)
       showToast('遮罩已保存', 'success')
     } catch (err) {
       if (
@@ -995,6 +1008,18 @@ export default function MaskEditorModal() {
                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                 </svg>
               </button>
+              <div className="w-px h-4 sm:h-5 bg-gray-300 dark:bg-[#323338] mx-1"></div>
+              <button
+                onClick={handleOpenReferenceEditor}
+                disabled={!isReady || isSaving}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg sm:rounded-xl bg-emerald-50 font-medium text-emerald-600 transition hover:bg-emerald-100 disabled:opacity-30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                title="切换到高级编辑"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                高级编辑
+              </button>
             </div>
           </div>
         </div>
@@ -1040,6 +1065,31 @@ export default function MaskEditorModal() {
             className="w-32 h-1.5 -rotate-90 bg-gray-200 dark:bg-black/30 rounded-full appearance-none outline-none cursor-ns-resize pointer-events-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-md"
             disabled={!isReady || isSaving}
           />
+        </div>,
+        document.body,
+      )}
+      {referenceEditorSession && createPortal(
+        <div className="fixed inset-0 z-[120]">
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 backdrop-blur-md text-sm text-white/70">
+                正在加载高级编辑器...
+              </div>
+            }
+          >
+            <ReferenceImageEditorModal
+              imageId={referenceEditorSession.imageId}
+              src={referenceEditorSession.src}
+              saveMode="replace-input"
+              onClose={() => setReferenceEditorSession(null)}
+              onSaved={(nextId, nextDataUrl) => {
+                setReferenceEditorSession(null)
+                if (nextId !== referenceEditorSession.imageId) {
+                  setReferenceEditorSession({ imageId: nextId, src: nextDataUrl })
+                }
+              }}
+            />
+          </Suspense>
         </div>,
         document.body,
       )}

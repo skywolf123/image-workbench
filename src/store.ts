@@ -12,6 +12,7 @@ import type {
   TaskParams,
   InputImage,
   MaskDraft,
+  ReferenceEditorTarget,
   TaskRecord,
   FavoriteCollection,
   ResponsesOutputItem,
@@ -258,7 +259,9 @@ interface AppState {
   setPrompt: (p: string) => void
   inputImages: InputImage[]
   addInputImage: (img: InputImage) => void
+  addInputImageWithDataUrl: (dataUrl: string) => Promise<string>
   replaceInputImage: (idx: number, img: InputImage) => void
+  replaceInputImageWithDataUrl: (imageId: string, dataUrl: string) => Promise<string>
   removeInputImage: (idx: number) => void
   clearInputImages: () => void
   setInputImages: (imgs: InputImage[], options?: { equivalentImageIds?: Record<string, string> }) => void
@@ -268,6 +271,8 @@ interface AppState {
   clearMaskDraft: () => void
   maskEditorImageId: string | null
   setMaskEditorImageId: (id: string | null) => void
+  referenceEditorTarget: ReferenceEditorTarget | null
+  setReferenceEditorTarget: (target: ReferenceEditorTarget | null) => void
   galleryInputDraft: AgentInputDraft | null
 
   // 参数
@@ -666,6 +671,43 @@ export const useStore = create<AppState>()(
         })
         if (removedImageId) void deleteImageIfUnreferenced(removedImageId)
       },
+      addInputImageWithDataUrl: async (dataUrl: string) => {
+        const { id, width, height } = await storeImageWithSize(dataUrl, 'edit')
+        const img: StoredImage = {
+          id,
+          dataUrl,
+          createdAt: Date.now(),
+          source: 'edit',
+          width,
+          height,
+        }
+        set((s) => {
+          if (s.inputImages.find((item) => item.id === id)) return s
+          return syncActiveInputDraft(s, { inputImages: [...s.inputImages, img] })
+        })
+        return id
+      },
+      replaceInputImageWithDataUrl: async (imageId: string, dataUrl: string) => {
+        const state = get()
+        const idx = state.inputImages.findIndex((img) => img.id === imageId)
+        if (idx < 0) {
+          return state.addInputImageWithDataUrl(dataUrl)
+        }
+        const { id: newId, width, height } = await storeImageWithSize(dataUrl, 'edit')
+        if (newId === imageId) {
+          return imageId
+        }
+        const newImage: StoredImage = {
+          id: newId,
+          dataUrl,
+          createdAt: Date.now(),
+          source: 'edit',
+          width,
+          height,
+        }
+        get().replaceInputImage(idx, newImage)
+        return newId
+      },
       removeInputImage: (idx) =>
         set((s) => {
           const removed = s.inputImages[idx]
@@ -681,6 +723,7 @@ export const useStore = create<AppState>()(
             ...updateInputDraftImages(s, []),
             maskDraft: null,
             maskEditorImageId: null,
+            referenceEditorTarget: null,
           })
         }),
       setInputImages: (imgs, options) =>
@@ -719,6 +762,11 @@ export const useStore = create<AppState>()(
       setMaskEditorImageId: (maskEditorImageId) => {
         if (maskEditorImageId) dismissAllTooltips()
         set((s) => syncActiveInputDraft(s, { maskEditorImageId }))
+      },
+      referenceEditorTarget: null,
+      setReferenceEditorTarget: (referenceEditorTarget) => {
+        if (referenceEditorTarget) dismissAllTooltips()
+        set((s) => syncActiveInputDraft(s, { referenceEditorTarget }))
       },
       galleryInputDraft: null,
 
@@ -4514,6 +4562,14 @@ export async function addImageFromFile(file: File): Promise<void> {
   const image = await createInputImageFromFile(file)
   if (!image) return
   useStore.getState().addInputImage(image)
+}
+
+export async function addInputImageFromDataUrl(dataUrl: string): Promise<string> {
+  return useStore.getState().addInputImageWithDataUrl(dataUrl)
+}
+
+export async function replaceInputImageFromDataUrl(imageId: string, dataUrl: string): Promise<string> {
+  return useStore.getState().replaceInputImageWithDataUrl(imageId, dataUrl)
 }
 
 export async function createInputImageFromFile(file: File): Promise<InputImage | null> {

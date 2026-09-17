@@ -1,10 +1,10 @@
-import type { AgentConversation, AgentInputDraft, AgentRound, AppMode, InputImage, MaskDraft } from '../types'
+import type { AgentConversation, AgentInputDraft, AgentRound, AppMode, InputImage, MaskDraft, ReferenceEditorTarget } from '../types'
 import { remapAgentRoundMentionsForPathChange } from './agentConversationState'
 import { remapImageMentionsForOrder } from './promptImageMentions'
 
 const AGENT_INPUT_DRAFT_RETENTION_MS = 3 * 24 * 60 * 60 * 1000
 
-type InputDraftFields = Pick<AgentInputDraft, 'prompt' | 'inputImages' | 'maskDraft' | 'maskEditorImageId'>
+type InputDraftFields = Pick<AgentInputDraft, 'prompt' | 'inputImages' | 'maskDraft' | 'maskEditorImageId' | 'referenceEditorTarget'>
 
 type AgentInputDraftState = InputDraftFields & {
   appMode: AppMode
@@ -43,6 +43,13 @@ function normalizeMaskDraft(value: unknown): MaskDraft | null {
   }
 }
 
+function normalizeReferenceEditorTarget(value: unknown): ReferenceEditorTarget | null {
+  if (!isRecord(value)) return null
+  if (typeof value.id !== 'string') return null
+  if (value.saveMode !== 'replace-input' && value.saveMode !== 'append-input') return null
+  return { id: value.id, saveMode: value.saveMode }
+}
+
 export function normalizeAgentInputDraft(value: unknown, fallbackUpdatedAt = Date.now()): AgentInputDraft {
   const draft = isRecord(value) ? value : {}
   const updatedAt = typeof draft.updatedAt === 'number' && Number.isFinite(draft.updatedAt) ? draft.updatedAt : fallbackUpdatedAt
@@ -51,6 +58,7 @@ export function normalizeAgentInputDraft(value: unknown, fallbackUpdatedAt = Dat
     inputImages: normalizeInputImages(draft.inputImages),
     maskDraft: normalizeMaskDraft(draft.maskDraft),
     maskEditorImageId: typeof draft.maskEditorImageId === 'string' ? draft.maskEditorImageId : null,
+    referenceEditorTarget: normalizeReferenceEditorTarget(draft.referenceEditorTarget),
     updatedAt,
   }
 }
@@ -94,6 +102,7 @@ export function clearInputDraftState(): InputDraftFields {
     inputImages: [],
     maskDraft: null,
     maskEditorImageId: null,
+    referenceEditorTarget: null,
   }
 }
 
@@ -103,6 +112,7 @@ function copyAgentInputDraft(draft: AgentInputDraft): AgentInputDraft {
     inputImages: draft.inputImages.map((img) => ({ ...img })),
     maskDraft: draft.maskDraft ? { ...draft.maskDraft } : null,
     maskEditorImageId: draft.maskEditorImageId,
+    referenceEditorTarget: draft.referenceEditorTarget ? { ...draft.referenceEditorTarget } : null,
     updatedAt: draft.updatedAt ?? Date.now(),
   }
 }
@@ -113,12 +123,17 @@ function getCurrentAgentInputDraft(state: InputDraftFields): AgentInputDraft {
     inputImages: state.inputImages,
     maskDraft: state.maskDraft,
     maskEditorImageId: state.maskEditorImageId,
+    referenceEditorTarget: state.referenceEditorTarget,
     updatedAt: Date.now(),
   }
 }
 
 export function isEmptyAgentInputDraft(draft: AgentInputDraft) {
-  return draft.prompt.length === 0 && draft.inputImages.length === 0 && !draft.maskDraft && !draft.maskEditorImageId
+  return draft.prompt.length === 0
+    && draft.inputImages.length === 0
+    && !draft.maskDraft
+    && !draft.maskEditorImageId
+    && !draft.referenceEditorTarget
 }
 
 function setAgentInputDraft(drafts: Record<string, AgentInputDraft>, conversationId: string, draft: AgentInputDraft) {
@@ -149,6 +164,7 @@ export function restoreGalleryInputDraftState(draft: AgentInputDraft | null): In
     inputImages: draft.inputImages.map((img) => ({ ...img })),
     maskDraft: draft.maskDraft ? { ...draft.maskDraft } : null,
     maskEditorImageId: draft.maskEditorImageId,
+    referenceEditorTarget: draft.referenceEditorTarget ? { ...draft.referenceEditorTarget } : null,
   }
 }
 
@@ -166,6 +182,7 @@ export function syncActiveInputDraft<T extends Partial<AgentInputDraft>>(
     inputImages: patch.inputImages ?? state.inputImages,
     maskDraft: patch.maskDraft !== undefined ? patch.maskDraft : state.maskDraft,
     maskEditorImageId: patch.maskEditorImageId !== undefined ? patch.maskEditorImageId : state.maskEditorImageId,
+    referenceEditorTarget: patch.referenceEditorTarget !== undefined ? patch.referenceEditorTarget : state.referenceEditorTarget,
   }
   if (state.appMode === 'gallery') {
     return {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { initStore, restoreExplicitPresetConfig, useStore } from './store'
 import { buildSettingsFromUrlParams, clearUrlSettingParams, getExplicitUrlSettingsIds, hasUrlSettingParams } from './lib/urlSettings'
 import { createDefaultOpenAIProfile, hasDefaultPresetConfig, isAgentTextApiProfile, normalizeSettings } from './lib/apiProfiles'
@@ -20,8 +20,10 @@ import Toast from './components/Toast'
 import MaskEditorModal from './components/MaskEditorModal'
 import ImageContextMenu from './components/ImageContextMenu'
 import PromptLibraryModal from './components/PromptLibraryModal'
+const ReferenceImageEditorModal = lazy(() => import('./components/ReferenceImageEditorModal'))
 import { FavoriteCollectionPickerModal, FavoriteCollectionsView, ManageCollectionsModal } from './components/FavoriteCollections'
 import { useGlobalClickSuppression } from './lib/clickSuppression'
+import { ensureImageCached, getCachedImage } from './lib/imageCache'
 import UpdateNotification from './components/UpdateNotification'
 import PullToRefresh from './components/PullToRefresh'
 
@@ -31,6 +33,11 @@ export default function App() {
   const appMode = useStore((s) => s.appMode)
   const filterFavorite = useStore((s) => s.filterFavorite)
   const activeFavoriteCollectionId = useStore((s) => s.activeFavoriteCollectionId)
+  const referenceEditorTarget = useStore((s) => s.referenceEditorTarget)
+  const setReferenceEditorTarget = useStore((s) => s.setReferenceEditorTarget)
+  const lightboxImageList = useStore((s) => s.lightboxImageList)
+  const setLightboxImageId = useStore((s) => s.setLightboxImageId)
+  const [referenceEditorSrc, setReferenceEditorSrc] = useState<string | null>(null)
   useDockerApiUrlMigrationNotice()
   useGlobalClickSuppression()
 
@@ -137,6 +144,25 @@ export default function App() {
     return () => document.removeEventListener('dragstart', preventPageImageDrag)
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!referenceEditorTarget) {
+      setReferenceEditorSrc(null)
+      return
+    }
+    const cached = getCachedImage(referenceEditorTarget.id)
+    if (cached) {
+      setReferenceEditorSrc(cached)
+      return
+    }
+    ensureImageCached(referenceEditorTarget.id).then((url) => {
+      if (!cancelled) setReferenceEditorSrc(url ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [referenceEditorTarget])
+
   return (
     <>
       <Header />
@@ -164,6 +190,20 @@ export default function App() {
       <PromptLibraryModal />
       <UpdateNotification />
       <PullToRefresh />
+      {referenceEditorTarget && referenceEditorSrc && (
+        <Suspense fallback={null}>
+          <ReferenceImageEditorModal
+            imageId={referenceEditorTarget.id}
+            src={referenceEditorSrc}
+            saveMode={referenceEditorTarget.saveMode}
+            onSaved={(nextId) => {
+              setLightboxImageId(nextId, lightboxImageList.length > 0 ? lightboxImageList : [])
+              setReferenceEditorTarget(null)
+            }}
+            onClose={() => setReferenceEditorTarget(null)}
+          />
+        </Suspense>
+      )}
     </>
   )
 }

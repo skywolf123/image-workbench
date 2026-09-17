@@ -5388,3 +5388,60 @@ describe('reused task API profile', () => {
     expect(state.showSettings).toBe(false)
   })
 })
+
+describe('reference editor dataURL actions', () => {
+  beforeEach(() => {
+    useStore.setState({ inputImages: [], maskDraft: null })
+  })
+
+  it('addInputImageWithDataUrl appends a new reference image and returns its id', async () => {
+    useStore.setState({ inputImages: [imageA] })
+
+    const nextId = await useStore.getState().addInputImageWithDataUrl('data:image/png;base64,edited')
+
+    const { inputImages } = useStore.getState()
+    expect(nextId).toMatch(/^stored-image-\d+$/)
+    expect(inputImages).toHaveLength(2)
+    expect(inputImages[0]).toEqual(imageA)
+    expect(inputImages[1]).toMatchObject({
+      id: nextId,
+      dataUrl: 'data:image/png;base64,edited',
+      source: 'edit',
+    })
+  })
+
+  it('replaceInputImageWithDataUrl replaces the target image and removes the old one', async () => {
+    useStore.setState({ inputImages: [imageA, imageB] })
+
+    const nextId = await useStore.getState().replaceInputImageWithDataUrl(imageA.id, 'data:image/png;base64,edited')
+
+    const { inputImages } = useStore.getState()
+    expect(nextId).toMatch(/^stored-image-\d+$/)
+    expect(nextId).not.toBe(imageA.id)
+    expect(inputImages).toHaveLength(2)
+    expect(inputImages[0]).toMatchObject({ id: nextId, dataUrl: 'data:image/png;base64,edited' })
+    expect(inputImages[1]).toEqual(imageB)
+  })
+
+  it('replaceInputImageWithDataUrl falls back to append when target id is missing', async () => {
+    useStore.setState({ inputImages: [imageA] })
+
+    const nextId = await useStore.getState().replaceInputImageWithDataUrl('missing-image', 'data:image/png;base64,edited')
+
+    const { inputImages } = useStore.getState()
+    expect(nextId).toMatch(/^stored-image-\d+$/)
+    expect(inputImages).toHaveLength(2)
+    expect(inputImages[1]).toMatchObject({ id: nextId })
+  })
+
+  it('replaceInputImageWithDataUrl clears maskDraft that targets the replaced image', async () => {
+    useStore.setState({
+      inputImages: [imageA],
+      maskDraft: { targetImageId: imageA.id, maskDataUrl: 'data:image/png;base64,mask', updatedAt: 1 },
+    })
+
+    await useStore.getState().replaceInputImageWithDataUrl(imageA.id, 'data:image/png;base64,edited')
+
+    expect(useStore.getState().maskDraft).toBeNull()
+  })
+})

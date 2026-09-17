@@ -166,7 +166,15 @@ export interface AgentInputDraft {
   inputImages: InputImage[]
   maskDraft: MaskDraft | null
   maskEditorImageId: string | null
+  referenceEditorTarget?: ReferenceEditorTarget | null
   updatedAt?: number
+}
+
+export type ReferenceEditorSaveMode = 'replace-input' | 'append-input'
+
+export interface ReferenceEditorTarget {
+  id: string
+  saveMode: ReferenceEditorSaveMode
 }
 
 // ===== 任务记录 =====
@@ -312,7 +320,7 @@ export interface StoredImage {
   /** 图片首次存储时间（ms） */
   createdAt?: number
   /** 图片来源：用户上传 / API 生成 / 遮罩 */
-  source?: 'upload' | 'generated' | 'mask'
+  source?: 'upload' | 'generated' | 'mask' | 'edit'
   /** 原图宽度 */
   width?: number
   /** 原图高度 */
@@ -463,7 +471,7 @@ export interface ExportData {
   imageFiles?: Record<string, {
     path: string
     createdAt?: number
-    source?: 'upload' | 'generated' | 'mask'
+    source?: 'upload' | 'generated' | 'mask' | 'edit'
     width?: number
     height?: number
   }>
