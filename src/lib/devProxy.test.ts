@@ -1,5 +1,19 @@
-import { describe, expect, it } from 'vitest'
-import { buildApiUrl, normalizeBaseUrl } from './devProxy'
+import { describe, expect, it, vi } from 'vitest'
+import { buildApiUrl, normalizeBaseUrl, resolveApiTransport } from './devProxy'
+import type { DevProxyConfig } from './devProxy'
+
+const mocks = vi.hoisted(() => ({ backendFallback: false }))
+
+// hasBackendFallback 在模块加载时读运行期占位符，这里替身成可控开关。
+vi.mock('./presetConfig', () => ({ hasBackendFallback: () => mocks.backendFallback }))
+
+const ENABLED_PROXY: DevProxyConfig = {
+  enabled: true,
+  prefix: '/api-proxy',
+  target: 'http://api.example.com/v1',
+  changeOrigin: true,
+  secure: false,
+}
 
 describe('normalizeBaseUrl', () => {
   it('preserves a trailing slash used for direct endpoint joining', () => {
@@ -72,5 +86,49 @@ describe('buildApiUrl', () => {
     expect(buildApiUrl('https://api.example.com/', 'responses', null, false)).toBe(
       'https://api.example.com/responses',
     )
+  })
+
+  it('网关档返回同源 /api/gateway 前缀，与 baseUrl 无关', () => {
+    expect(buildApiUrl('http://api.example.com/v1', 'images/generations', null, 'gateway')).toBe(
+      '/api/gateway/images/generations',
+    )
+    expect(buildApiUrl('', 'responses', null, 'gateway')).toBe('/api/gateway/responses')
+  })
+})
+
+describe('resolveApiTransport', () => {
+  it('空 Key 且后端持有网关 Key 时走网关', () => {
+    mocks.backendFallback = true
+    try {
+      expect(resolveApiTransport({ apiKey: '' }, ENABLED_PROXY)).toBe('gateway')
+      expect(resolveApiTransport({ apiKey: '  ' }, ENABLED_PROXY)).toBe('gateway')
+    } finally {
+      mocks.backendFallback = false
+    }
+  })
+
+  it('网关优先于代理：老部署预置配置（空 Key + 锁代理）在新部署上被网关接住', () => {
+    mocks.backendFallback = true
+    try {
+      expect(resolveApiTransport({ apiProxy: true, apiKey: '' }, ENABLED_PROXY)).toBe('gateway')
+    } finally {
+      mocks.backendFallback = false
+    }
+  })
+
+  it('前端填了 Key 就不走网关——计费主体跟着用户', () => {
+    mocks.backendFallback = true
+    try {
+      expect(resolveApiTransport({ apiKey: 'user-key' }, ENABLED_PROXY)).toBe('direct')
+      expect(resolveApiTransport({ apiProxy: true, apiKey: 'user-key' }, ENABLED_PROXY)).toBe('proxy')
+    } finally {
+      mocks.backendFallback = false
+    }
+  })
+
+  it('没有网关时退回代理档，再退直连', () => {
+    expect(resolveApiTransport({ apiProxy: true, apiKey: '' }, ENABLED_PROXY)).toBe('proxy')
+    expect(resolveApiTransport({ apiKey: '' }, ENABLED_PROXY)).toBe('direct')
+    expect(resolveApiTransport({ apiKey: '' }, null)).toBe('direct')
   })
 })

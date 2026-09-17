@@ -15,7 +15,7 @@ import type {
 } from '../types'
 import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_STREAM_PARTIAL_IMAGES, DEFAULT_ZIP_DOWNLOAD_ROUTES, ZIP_DOWNLOAD_ROUTE_VALUES } from '../types'
 import { customProviderSupportsNativeTransparentBackground } from './customProviderCapabilities'
-import { shouldUseApiProxy } from './devProxy'
+import { resolveApiTransport } from './devProxy'
 import { normalizeReasoningEffort, normalizeStreamPartialImages, parseDefaultApiUrl } from './defaultApiUrl'
 import { hasBackendFallback } from './presetConfig'
 import { readRuntimeEnv } from './runtimeEnv'
@@ -867,8 +867,9 @@ export function getActiveApiProfile(settings: Partial<AppSettings> | unknown): A
 
 export function validateApiProfile(profile: ApiProfile): string | null {
   if (!profile.name.trim()) return '缺少名称'
-  if (profile.provider !== 'fal' && !profile.baseUrl.trim() && !shouldUseApiProxy(profile.apiProxy)) return '缺少 API URL'
-  // 部署端在后端持有 Key 时不必要求前端填：填了优先，没填则由代理补上。
+  // 网关与代理档都不需要前端填 baseUrl（前者由 GATEWAY_API_URL、后者由 API_PROXY_URL 提供）。
+  if (profile.provider !== 'fal' && !profile.baseUrl.trim() && resolveApiTransport(profile) === 'direct') return '缺少 API URL'
+  // 部署端在后端持有 Key 时不必要求前端填：填了优先，没填则由网关注入。
   if (!hasBackendFallback() && !profile.apiKey.trim()) return '缺少 API Key'
   if (!profile.model.trim()) return '缺少模型 ID'
   return null

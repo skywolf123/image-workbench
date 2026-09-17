@@ -56,21 +56,32 @@ export default defineConfig(async ({ command, mode }) => {
     },
     server: {
       host: true,
-      proxy:
-        devProxyConfig?.enabled
-          ? {
-              [devProxyConfig.prefix]: {
-                target: devProxyConfig.target,
-                changeOrigin: devProxyConfig.changeOrigin,
-                secure: devProxyConfig.secure,
-                rewrite: (path) =>
-                  path.replace(
-                    new RegExp(`^${devProxyConfig.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
-                    '',
-                  ),
-              },
-            }
-          : undefined,
+      proxy: (devProxyConfig?.enabled
+        ? {
+            // 固定转发本部署自带的两条同源路由：网关与同步。目标与代理上游相同——
+            // 本地开发时指向同一台平台服务器，路径不需要改写。
+            '/api/gateway': {
+              target: devProxyConfig.target,
+              changeOrigin: devProxyConfig.changeOrigin,
+              secure: devProxyConfig.secure,
+            },
+            '/api/sync': {
+              target: devProxyConfig.target,
+              changeOrigin: devProxyConfig.changeOrigin,
+              secure: devProxyConfig.secure,
+            },
+            [devProxyConfig.prefix]: {
+              target: devProxyConfig.target,
+              changeOrigin: devProxyConfig.changeOrigin,
+              secure: devProxyConfig.secure,
+              rewrite: (path: string) =>
+                path.replace(
+                  new RegExp(`^${devProxyConfig.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+                  '',
+                ),
+            },
+          }
+        : undefined),
     },
   }
 })
