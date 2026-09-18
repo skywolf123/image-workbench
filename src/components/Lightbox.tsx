@@ -807,7 +807,7 @@ function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, current
           )}
           <button
             type="button"
-            className={`flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium shadow-md transition active:scale-95 ${isInputImage ? 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-emerald-500/25' : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-blue-500/25'}`}
+            className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium shadow-md transition active:scale-95 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
             onClick={onAdvancedEdit}
           >
             <EditIcon className="w-4 h-4" />
