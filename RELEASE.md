@@ -1,3 +1,10 @@
+## v0.7.12-iw09（2026-09-18）
+
+### 变更
+- 重构「高级编辑」组件：主组件从 1335 行降到 1070 行，拆分出 4 个独立 UI panel（History / Tool / TextStyle / MaskStyle / Finish）、types / utils / useIsMobileDevice 子文件，模块边界清晰。
+- 抽 `isBaseImage(o)` helper，消除 9 处 `getEditorKind(...) === 'base-image'` 重复判断。
+- 移除 `getEditorKind` / `getMaskShapeTypeFromObject` 中冗余的 `typeof object !== 'object'` 防御性检查。
+
 ## v0.7.12-iw08（2026-09-18）
 
 ### 新增

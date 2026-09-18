@@ -1,4 +1,4 @@
-const CACHE_NAME = 'image-workbench-v0.7.12-iw08'
+const CACHE_NAME = 'image-workbench-v0.7.12-iw09'
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './pwa-icon.svg']
 const APP_SHELL_URLS = new Set(APP_SHELL.map((path) => new URL(path, self.registration.scope).href))
 const ASSETS_PATH = new URL('./assets/', self.registration.scope).pathname
