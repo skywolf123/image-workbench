@@ -18,7 +18,7 @@ import { getContentEditableCursor, getContentEditablePlainText, getContentEditab
 import { useHintTooltip } from '../hooks/useHintTooltip'
 import { downloadImageEntriesAsZip, downloadImageIds, formatExportFileTime, getTaskOutputImageZipEntries } from '../lib/downloadImages'
 import SizePickerModal from './SizePickerModal'
-import { CloseIcon, CollapseIcon, ExpandIcon } from './icons'
+import { CloseIcon, CollapseIcon, ExpandIcon, PlusIcon } from './icons'
 import ButtonTooltip from './input/buttonTooltip'
 import DragUploadOverlay from './input/dragUploadOverlay'
 import InputBatchBars from './input/inputBatchBars'
@@ -361,6 +361,7 @@ export default function InputBar() {
   const [expandPromptHover, setExpandPromptHover] = useState(false)
   const [submitHover, setSubmitHover] = useState(false)
   const [attachHover, setAttachHover] = useState(false)
+  const [newHover, setNewHover] = useState(false)
   const [imageHintId, setImageHintId] = useState<string | null>(null)
   const [mobileCollapsed, setMobileCollapsed] = useState(false)
   const [showSizePicker, setShowSizePicker] = useState(false)
@@ -660,6 +661,29 @@ export default function InputBar() {
       textareaRef.current.focus()
     }
   }, [setPrompt])
+
+  // 一键新建：清空提示词 + 参考图 + 遮罩，带二次确认。
+  const handleNewClick = useCallback(() => {
+    const state = useStore.getState()
+    const { prompt, inputImages, maskDraft } = state
+    if (!prompt && inputImages.length === 0 && !maskDraft) {
+      state.showToast('当前已是全新状态', 'info')
+      return
+    }
+    state.setConfirmDialog({
+      title: '新建',
+      message: '确定要清空当前提示词、参考图和遮罩吗？',
+      tone: 'danger',
+      confirmText: '清空',
+      cancelText: '取消',
+      action: () => {
+        const next = useStore.getState()
+        next.setPrompt('')
+        next.clearInputImages()
+        if (textareaRef.current) textareaRef.current.innerHTML = ''
+      },
+    })
+  }, [])
 
   useEffect(() => {
     setOutputCompressionInput(
@@ -1682,7 +1706,24 @@ export default function InputBar() {
           )}
 
           {/* 输入框 */}
-          <div className={`relative grid${promptExpanded ? ' min-h-0 flex-1' : ''}`}>
+          <div className={`hidden sm:flex items-end gap-2${promptExpanded ? ' min-h-0 flex-1' : ''}`}>
+            {/* 新建按钮（仅 PC 端） */}
+            <div
+              className="relative flex-shrink-0"
+              onMouseEnter={() => setNewHover(true)}
+              onMouseLeave={() => setNewHover(false)}
+            >
+              <ButtonTooltip visible={newHover} text="新建" />
+              <button
+                type="button"
+                onClick={handleNewClick}
+                aria-label="新建"
+                className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-300 dark:hover:bg-white/[0.1] text-gray-500 dark:text-gray-300 transition-all shadow-sm hover:shadow"
+              >
+                <PlusIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className={`relative grid flex-1${promptExpanded ? ' min-h-0' : ''}`}>
             {showAtImageMenu && (
               <div style={{ left: `${menuLeft}px` }} className="absolute bottom-full z-50 mb-2 w-64 overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 p-1.5 shadow-xl ring-1 ring-black/5 backdrop-blur-xl dark:border-white/[0.08] dark:bg-gray-900/95 dark:ring-white/10">
                 <div className="px-2 pb-1 pt-0.5 text-[11px] text-gray-400 dark:text-gray-500">选择图片引用</div>
@@ -1818,6 +1859,7 @@ export default function InputBar() {
                 </button>
               </div>
             )}
+            </div>
           </div>
 
           {/* 参数 + 按钮 */}
@@ -1889,6 +1931,22 @@ export default function InputBar() {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* 新建按钮（移动端） */}
+                <div
+                  className="relative flex-shrink-0"
+                  onMouseEnter={() => setNewHover(true)}
+                  onMouseLeave={() => setNewHover(false)}
+                >
+                  <ButtonTooltip visible={newHover} text="新建" />
+                  <button
+                    type="button"
+                    onClick={handleNewClick}
+                    aria-label="新建"
+                    className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-300 dark:hover:bg-white/[0.1] text-gray-500 dark:text-gray-300 transition-all shadow-sm flex-shrink-0"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                  </button>
+                </div>
                 <div
                   className="relative"
                   onMouseEnter={() => setAttachHover(true)}
@@ -1908,12 +1966,12 @@ export default function InputBar() {
                     aria-label={uploadImageTooltipText}
                   >
                     <svg
-                      className={`w-5 h-5 transition-transform duration-200 ${showMobileUploadMenu ? 'rotate-90' : ''}`}
+                      className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
                   </button>
 
