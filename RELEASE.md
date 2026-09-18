@@ -4,6 +4,9 @@
 - 「高级编辑」：参考项目 gpt_image_playground 的画布编辑器迁入。在 Lightbox（参考图与结果图）、DetailModal 与 MaskEditorModal 工具栏提供入口，支持涂抹填色、文字、贴图、水平/垂直翻转、撤销重做；编辑结果可替换当前参考图或追加为新参考图。
 - `fabric@^7.3.1` 新增依赖。
 
+### 变更
+- 移除外层入口的 DetailModal「高级编辑」按钮（仅保留 Lightbox 与 MaskEditorModal 两处入口）。
+
 ## v0.7.12-iw06（2025-01-21）
 
 ### 新增
