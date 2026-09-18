@@ -273,6 +273,7 @@ interface AppState {
   setMaskEditorImageId: (id: string | null) => void
   referenceEditorTarget: ReferenceEditorTarget | null
   setReferenceEditorTarget: (target: ReferenceEditorTarget | null) => void
+  clearReferenceEditorTarget: () => void
   galleryInputDraft: AgentInputDraft | null
 
   // 参数
@@ -768,6 +769,7 @@ export const useStore = create<AppState>()(
         if (referenceEditorTarget) dismissAllTooltips()
         set((s) => syncActiveInputDraft(s, { referenceEditorTarget }))
       },
+      clearReferenceEditorTarget: () => set((s) => syncActiveInputDraft(s, { referenceEditorTarget: null })),
       galleryInputDraft: null,
 
       // Params

@@ -34,9 +34,7 @@ export default function App() {
   const filterFavorite = useStore((s) => s.filterFavorite)
   const activeFavoriteCollectionId = useStore((s) => s.activeFavoriteCollectionId)
   const referenceEditorTarget = useStore((s) => s.referenceEditorTarget)
-  const setReferenceEditorTarget = useStore((s) => s.setReferenceEditorTarget)
-  const lightboxImageList = useStore((s) => s.lightboxImageList)
-  const setLightboxImageId = useStore((s) => s.setLightboxImageId)
+  const clearReferenceEditorTarget = useStore((s) => s.clearReferenceEditorTarget)
   const [referenceEditorSrc, setReferenceEditorSrc] = useState<string | null>(null)
   useDockerApiUrlMigrationNotice()
   useGlobalClickSuppression()
@@ -196,11 +194,7 @@ export default function App() {
             imageId={referenceEditorTarget.id}
             src={referenceEditorSrc}
             saveMode={referenceEditorTarget.saveMode}
-            onSaved={(nextId) => {
-              setLightboxImageId(nextId, lightboxImageList.length > 0 ? lightboxImageList : [])
-              setReferenceEditorTarget(null)
-            }}
-            onClose={() => setReferenceEditorTarget(null)}
+            onClose={() => clearReferenceEditorTarget()}
           />
         </Suspense>
       )}

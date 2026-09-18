@@ -481,7 +481,7 @@ export default function MaskEditorModal() {
         if (!dataUrl) {
           showToast('图片已不存在，无法编辑遮罩', 'error')
           setMaskEditorImageId(null)
-        setReferenceEditorSession(null)
+          setReferenceEditorSession(null)
           return
         }
 
@@ -535,7 +535,7 @@ export default function MaskEditorModal() {
         if (!cancelled) {
           showToast(err instanceof Error ? err.message : String(err), 'error')
           setMaskEditorImageId(null)
-        setReferenceEditorSession(null)
+          setReferenceEditorSession(null)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -817,7 +817,7 @@ export default function MaskEditorModal() {
         updatedAt: Date.now(),
       })
       setMaskEditorImageId(null)
-        setReferenceEditorSession(null)
+      setReferenceEditorSession(null)
       showToast('遮罩已保存', 'success')
     } catch (err) {
       if (

@@ -78,10 +78,19 @@ vi.mock('./lib/db', () => {
       return id
     },
     storeImageWithSize: async (dataUrl: string, source: StoredImage['source'] = 'upload') => {
-      const id = `stored-image-${++imageSeq}`
+      let existing: StoredImage | undefined
+      let id = ''
+      for (const [existingId, existingImage] of images.entries()) {
+        if (existingImage.dataUrl === dataUrl) {
+          id = existingId
+          existing = existingImage
+          break
+        }
+      }
+      if (!id) id = `stored-image-${++imageSeq}`
       const size = dataUrl.match(/(\d+)x(\d+)/)
-      const width = size ? Number(size[1]) : undefined
-      const height = size ? Number(size[2]) : undefined
+      const width = size ? Number(size[1]) : existing?.width
+      const height = size ? Number(size[2]) : existing?.height
       images.set(id, { id, dataUrl, source, createdAt: Date.now(), width, height })
       return { id, width, height }
     },
@@ -5443,5 +5452,14 @@ describe('reference editor dataURL actions', () => {
     await useStore.getState().replaceInputImageWithDataUrl(imageA.id, 'data:image/png;base64,edited')
 
     expect(useStore.getState().maskDraft).toBeNull()
+  })
+
+  it('replaceInputImageWithDataUrl keeps inputImages unchanged when the dataUrl hashes to the same id', async () => {
+    useStore.setState({ inputImages: [imageA] })
+
+    const nextId = await useStore.getState().replaceInputImageWithDataUrl(imageA.id, imageA.dataUrl)
+
+    expect(nextId).toBe(imageA.id)
+    expect(useStore.getState().inputImages).toEqual([imageA])
   })
 })
