@@ -1082,7 +1082,7 @@ export default function MaskEditorModal() {
               src={referenceEditorSession.src}
               saveMode="replace-input"
               onClose={() => setReferenceEditorSession(null)}
-              onSaved={(nextId, nextDataUrl) => {
+              onSaved={(nextId: string, nextDataUrl: string) => {
                 setReferenceEditorSession(null)
                 if (nextId !== referenceEditorSession.imageId) {
                   setReferenceEditorSession({ imageId: nextId, src: nextDataUrl })
