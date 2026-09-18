@@ -1706,7 +1706,7 @@ export default function InputBar() {
           )}
 
           {/* 输入框 */}
-          <div className={`hidden sm:flex items-end gap-2${promptExpanded ? ' min-h-0 flex-1' : ''}`}>
+          <div className={`hidden sm:flex items-center gap-2${promptExpanded ? ' min-h-0 flex-1' : ''}`}>
             {/* 新建按钮（仅 PC 端） */}
             <div
               className="relative flex-shrink-0"
