@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_FAL_BASE_URL,
   DEFAULT_FAL_MODEL,
+  DEFAULT_GROK_BASE_URL,
+  DEFAULT_GROK_MODEL,
   DEFAULT_IMAGES_MODEL,
   DEFAULT_RESPONSES_MODEL,
   DEFAULT_OPENAI_PROFILE_ID,
   DEFAULT_SETTINGS,
   createDefaultOpenAIProfile,
   createDefaultFalProfile,
+  createDefaultGrokProfile,
   getApiProviderLabel,
   getActiveApiProfile,
   getCustomProviderDefinition,
@@ -19,6 +22,8 @@ import {
   mergeImportedSettings,
   normalizeApiProfile,
   normalizeSettings,
+  resolveApiProfileModel,
+  splitModelList,
   switchApiProfileProvider,
   validateApiProfile,
 } from './apiProfiles'
@@ -79,6 +84,17 @@ describe('normalizeApiProfile', () => {
 })
 
 describe('normalizeSettings', () => {
+  it('falls back to creating a new task for unknown retry modes', () => {
+    expect(normalizeSettings({}).retryMode).toBe('new')
+    expect(normalizeSettings({ retryMode: 'bogus' }).retryMode).toBe('new')
+    expect(normalizeSettings({ retryMode: 'overwriteFailed' }).retryMode).toBe('overwriteFailed')
+  })
+
+  it('only keeps overwriting any task while successful tasks show the retry button', () => {
+    expect(normalizeSettings({ retryMode: 'overwriteAll' }).retryMode).toBe('overwriteFailed')
+    expect(normalizeSettings({ retryMode: 'overwriteAll', alwaysShowRetryButton: true }).retryMode).toBe('overwriteAll')
+  })
+
   it('preserves a non-empty profile description and removes an empty one', () => {
     const settings = normalizeSettings({
       profiles: [
@@ -1248,6 +1264,35 @@ describe('default API profile marker', () => {
   })
 })
 
+describe('built-in providers', () => {
+  it('registers grok as a built-in OpenAI-compatible provider', () => {
+    const grokProfile = createDefaultGrokProfile()
+    expect(grokProfile).toMatchObject({
+      provider: 'grok',
+      baseUrl: DEFAULT_GROK_BASE_URL,
+      model: DEFAULT_GROK_MODEL,
+      apiMode: 'images',
+      codexCli: false,
+      streamImages: false,
+      transparentBackgroundMethod: 'local',
+    })
+
+    const openaiProfile = createDefaultOpenAIProfile({ apiMode: 'responses', streamImages: true })
+    const switched = switchApiProfileProvider(openaiProfile, 'grok')
+    expect(switched).toMatchObject({
+      provider: 'grok',
+      baseUrl: DEFAULT_GROK_BASE_URL,
+      model: DEFAULT_GROK_MODEL,
+      apiMode: 'images',
+      streamImages: false,
+      codexCli: false,
+      transparentBackgroundMethod: 'local',
+    })
+
+    expect(getApiProviderLabel({}, 'grok')).toBe('Grok (xAI)')
+  })
+})
+
 describe('custom providers', () => {
   it('provides the built-in sub2api async manifest', () => {
     const settings = normalizeSettings({
@@ -1602,7 +1647,7 @@ describe('custom providers', () => {
       ],
     })
 
-    expect(settings.providerOrder).toEqual(['fal', 'openai', 'sb2api-async', 'custom-alpha', 'custom-beta'])
+    expect(settings.providerOrder).toEqual(['fal', 'openai', 'sb2api-async', 'grok', 'custom-alpha', 'custom-beta'])
   })
 
   it('keeps active custom providers in Images API mode when legacy apiMode is responses', () => {
@@ -1676,5 +1721,24 @@ describe('custom providers', () => {
     expect(restoredProfile.baseUrl).toBe('https://api.compat.example.com/v1')
     expect(restoredProfile.model).toBe('custom-openai-model')
     expect(restoredProfile.apiProxy).toBe(false)
+  })
+})
+
+describe('model list', () => {
+  it('normalizes comma separated models', () => {
+    expect(splitModelList('a,b ，c, a,')).toEqual(['a', 'b', 'c'])
+    expect(normalizeApiProfile({ model: 'a,b ，c' }).model).toBe('a, b, c')
+  })
+
+  it('resolves selected model and falls back to the first one', () => {
+    const profile = normalizeApiProfile({ model: 'a, b', selectedModel: 'b' })
+    expect(resolveApiProfileModel(profile).model).toBe('b')
+    expect(resolveApiProfileModel(profile, 'a').model).toBe('a')
+    expect(resolveApiProfileModel({ ...profile, selectedModel: 'x' }).model).toBe('a')
+  })
+
+  it('returns the selected model for the active profile', () => {
+    const profile = normalizeApiProfile({ id: 'p1', model: 'a,b', selectedModel: 'b' })
+    expect(getActiveApiProfile({ profiles: [profile], activeProfileId: 'p1' }).model).toBe('b')
   })
 })

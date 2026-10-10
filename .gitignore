@@ -7,3 +7,4 @@ dev-proxy.config.json
 .serena/
 .codegraph/
 .scratch/
+.claude/

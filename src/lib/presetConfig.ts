@@ -1,4 +1,5 @@
-import type { ApiProfile, AppSettings, CustomProviderDefinition } from '../types'
+import type { ApiProfile, AppSettings, CustomProviderDefinition, PresetAgentConfig, PresetConfig } from '../types'
+import { getPresetAgentSettings, normalizeSettings } from './apiProfiles'
 import { readRuntimeEnv } from './runtimeEnv'
 
 const RAW_SHOW_PRESET_CONFIG_ONLY = readRuntimeEnv(import.meta.env?.VITE_SHOW_PRESET_CONFIG_ONLY)
@@ -37,14 +38,16 @@ export function hasUsableApiConfig(profile: Pick<ApiProfile, 'apiKey'>) {
 let presetProfiles: ApiProfile[] = []
 let presetProviders: CustomProviderDefinition[] = []
 let presetProfileFields: Record<string, string[]> | undefined
+let presetAgent: PresetAgentConfig | undefined
 let defaultPresetProfileId: string | null = null
 
-export function setPresetConfig(settings: Pick<AppSettings, 'customProviders' | 'profiles'> & {
+export function setPresetConfig(settings: PresetConfig & {
   presetProfileFields?: Record<string, string[]>
 } | null) {
   presetProfiles = settings?.profiles.map((profile) => ({ ...profile })) ?? []
   presetProviders = settings?.customProviders.map((provider) => ({ ...provider })) ?? []
   presetProfileFields = settings?.presetProfileFields
+  presetAgent = settings?.agent ? { ...settings.agent } : undefined
   defaultPresetProfileId = presetProfiles.length === 1
     ? presetProfiles[0].id
     : presetProfiles.find((profile) => profile.isDefault === true)?.id ?? null
@@ -68,6 +71,7 @@ export function getPresetConfig() {
     customProviders: presetProviders.map((provider) => ({ ...provider })),
     profiles: presetProfiles.map((profile) => ({ ...profile })),
     presetProfileFields,
+    ...(presetAgent ? { agent: { ...presetAgent } } : {}),
   }
 }
 
@@ -115,6 +119,10 @@ export function isPresetProfileLocked(id: string) {
   return isPresetConfigParamsLocked() && isPresetProfile(id)
 }
 
+export function isPresetAgentFieldLocked(field: keyof PresetAgentConfig) {
+  return isPresetConfigParamsLocked() && presetAgent?.[field] !== undefined
+}
+
 export function isPresetProviderLocked(id: string) {
   return isPresetConfigParamsLocked() && isPresetProvider(id)
 }
@@ -145,6 +153,7 @@ export function enforcePresetConfigPolicy(
       // 锁住 Key 时清空本地值：这不是「保留用户的 Key」，而是宣布前端的 Key 不作数，
       // 让请求落到后端持有的 Key 上。
       apiKey: isPresetKeyLocked(profile.id) ? '' : profile.apiKey,
+      selectedModel: profile.selectedModel,
       provider: paramsLocked || presetConfigOnly ? preset.provider : profile.provider,
       isDefault: profile.id === defaultPresetProfileId ? true : undefined,
     }
@@ -173,14 +182,20 @@ export function enforcePresetConfigPolicy(
     : settings.agentImageProfileId
   const active = profiles.find((profile) => profile.id === activeProfileId)
 
+  // 配置删除后的引用回退沿用归一化逻辑，不恢复已删除的配置。
+  const agentSettings = paramsLocked && presetAgent
+    ? normalizeSettings({ ...settings, profiles, ...getPresetAgentSettings(presetAgent) })
+    : null
+
   return {
     ...settings,
     // 顶层字段是旧版单配置的兼容层，实际请求以 active profile 为准，两者必须一起走。
     apiKey: active ? active.apiKey : settings.apiKey,
+    ...(agentSettings ? { agentApiConfigMode: agentSettings.agentApiConfigMode } : {}),
     customProviders,
     profiles,
     activeProfileId,
-    agentTextProfileId,
-    agentImageProfileId,
+    agentTextProfileId: agentSettings && presetAgent?.textProfileId !== undefined ? agentSettings.agentTextProfileId : agentTextProfileId,
+    agentImageProfileId: agentSettings && presetAgent?.imageProfileId !== undefined ? agentSettings.agentImageProfileId : agentImageProfileId,
   }
 }
