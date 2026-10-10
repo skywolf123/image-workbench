@@ -222,15 +222,7 @@ export interface AgentInputDraft {
   inputImages: InputImage[]
   maskDraft: MaskDraft | null
   maskEditorImageId: string | null
-  referenceEditorTarget?: ReferenceEditorTarget | null
   updatedAt?: number
-}
-
-export type ReferenceEditorSaveMode = 'replace-input' | 'append-input'
-
-export interface ReferenceEditorTarget {
-  id: string
-  saveMode: ReferenceEditorSaveMode
 }
 
 // ===== 任务记录 =====

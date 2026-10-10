@@ -4,7 +4,6 @@ import { buildSettingsFromUrlParams, clearUrlSettingParams, getExplicitUrlSettin
 import { createDefaultOpenAIProfile, hasDefaultPresetConfig, isAgentTextApiProfile, normalizeSettings } from './lib/apiProfiles'
 import { getCustomProviderConfigUrl, hasEmbeddedDefaultConfig, loadCustomProviderSettingsFromUrl, loadEmbeddedDefaultConfig } from './lib/customProviderConfigUrl'
 import { getDefaultPresetProfileId, getPresetProfileIds, isPresetConfigOnlyEnabled, setPresetConfig } from './lib/presetConfig'
-import { mergeSponsorPresets } from './lib/sponsorPresets'
 import { useDockerApiUrlMigrationNotice } from './hooks/useDockerApiUrlMigrationNotice'
 import type { AppSettings } from './types'
 import Header from './components/Header'
@@ -22,7 +21,7 @@ import MaskEditorModal from './components/MaskEditorModal'
 import SketchBoardModal from './components/SketchBoardModal'
 import ImageContextMenu from './components/ImageContextMenu'
 import PromptLibraryModal from './components/PromptLibraryModal'
-const ReferenceImageEditorModal = lazy(() => import('./components/ReferenceImageEditorModal'))
+
 import { FavoriteCollectionPickerModal, FavoriteCollectionsView, ManageCollectionsModal } from './components/FavoriteCollections'
 import { useGlobalClickSuppression } from './lib/clickSuppression'
 import { ensureImageCached, getCachedImage } from './lib/imageCache'
@@ -34,9 +33,7 @@ export default function App() {
   const appMode = useStore((s) => s.appMode)
   const filterFavorite = useStore((s) => s.filterFavorite)
   const activeFavoriteCollectionId = useStore((s) => s.activeFavoriteCollectionId)
-  const referenceEditorTarget = useStore((s) => s.referenceEditorTarget)
-  const clearReferenceEditorTarget = useStore((s) => s.clearReferenceEditorTarget)
-  const [referenceEditorSrc, setReferenceEditorSrc] = useState<string | null>(null)
+
   useDockerApiUrlMigrationNotice()
   useGlobalClickSuppression()
 
@@ -74,7 +71,7 @@ export default function App() {
 
     void initStore()
       .then(async () => {
-        const loadedSettings = embeddedDefaultConfig || customProviderConfigUrl
+        const importedSettings = embeddedDefaultConfig || customProviderConfigUrl
           ? await loadDefaultConfig().catch((error) => {
               console.warn('Failed to load deployment config, keeping previous presets:', error)
               return useStore.getState().previousPresetConfig
@@ -85,7 +82,6 @@ export default function App() {
                 profiles: [{ ...createDefaultOpenAIProfile(), isDefault: true }],
               }
             : null
-        const importedSettings = mergeSponsorPresets(loadedSettings, useStore.getState().settings)
         setPresetConfig(importedSettings)
 
         const state = useStore.getState()
@@ -133,24 +129,7 @@ export default function App() {
     return () => document.removeEventListener('dragstart', preventPageImageDrag)
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    if (!referenceEditorTarget) {
-      setReferenceEditorSrc(null)
-      return
-    }
-    const cached = getCachedImage(referenceEditorTarget.id)
-    if (cached) {
-      setReferenceEditorSrc(cached)
-      return
-    }
-    ensureImageCached(referenceEditorTarget.id).then((url) => {
-      if (!cancelled) setReferenceEditorSrc(url ?? null)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [referenceEditorTarget])
+
 
   return (
     <>
@@ -179,16 +158,7 @@ export default function App() {
       <ImageContextMenu />
       <PromptLibraryModal />
       <PullToRefresh />
-      {referenceEditorTarget && referenceEditorSrc && (
-        <Suspense fallback={null}>
-          <ReferenceImageEditorModal
-            imageId={referenceEditorTarget.id}
-            src={referenceEditorSrc}
-            saveMode={referenceEditorTarget.saveMode}
-            onClose={() => clearReferenceEditorTarget()}
-          />
-        </Suspense>
-      )}
+
     </>
   )
 }

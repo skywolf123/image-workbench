@@ -78,10 +78,9 @@ export default function AgentSettingsTab({
                 {agentTextProfileOptions.length > 0 ? (
                   <Select
                     value={selectedAgentTextProfile?.id ?? '请选择配置'}
-                    disabled={isPresetAgentFieldLocked('textProfileId')}
+                    disabled={profileSelectDisabled || isPresetAgentFieldLocked('textProfileId')}
                     onChange={(value) => commitSettings({ ...draft, agentTextProfileId: String(value) })}
                     options={agentTextProfileOptions}
-                    disabled={profileSelectDisabled}
                     showValueTooltips
                     className="w-full px-3 py-1.5 rounded-xl border border-transparent bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.1] text-xs transition-all duration-200 text-gray-700 dark:text-gray-200 outline-none"
                   />
@@ -105,10 +104,9 @@ export default function AgentSettingsTab({
                   {agentImageProfileOptions.length > 0 ? (
                     <Select
                       value={selectedAgentImageProfile?.id ?? '请选择配置'}
-                      disabled={isPresetAgentFieldLocked('imageProfileId')}
+                      disabled={profileSelectDisabled || isPresetAgentFieldLocked('imageProfileId')}
                       onChange={(value) => commitSettings({ ...draft, agentImageProfileId: String(value) })}
                       options={agentImageProfileOptions}
-                      disabled={profileSelectDisabled}
                       showValueTooltips
                       className="w-full px-3 py-1.5 rounded-xl border border-transparent bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.1] text-xs transition-all duration-200 text-gray-700 dark:text-gray-200 outline-none"
                     />

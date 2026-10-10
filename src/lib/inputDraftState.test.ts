@@ -4,7 +4,6 @@ import { getSelectedImageMentionLabel } from './promptImageMentions'
 import {
   cleanStaleAgentInputDrafts,
   getPersistableAgentInputDrafts,
-  isEmptyAgentInputDraft,
   normalizeAgentInputDraft,
   normalizeAgentInputDrafts,
   normalizeAgentInputDraftsByKey,
@@ -44,7 +43,6 @@ describe('input draft normalization', () => {
       inputImages: [imageA, { id: 'image-b', dataUrl: '' }],
       maskDraft: null,
       maskEditorImageId: null,
-      referenceEditorTarget: null,
       updatedAt: 50,
     })
 
@@ -84,7 +82,6 @@ describe('input draft normalization', () => {
       inputImages: [{ id: imageA.id, dataUrl: '' }],
       maskDraft: null,
       maskEditorImageId: null,
-      referenceEditorTarget: null,
       updatedAt: 50,
     })
   })
@@ -133,7 +130,6 @@ describe('input draft mode and conversation transforms', () => {
       inputImages: [],
       maskDraft: null,
       maskEditorImageId: null,
-      referenceEditorTarget: null,
     })
   })
 
@@ -276,7 +272,6 @@ describe('input draft persistence transforms', () => {
         inputImages: [{ id: imageA.id, dataUrl: '' }],
         maskDraft: null,
         maskEditorImageId: null,
-        referenceEditorTarget: null,
         updatedAt: 100,
       },
       saved: {
@@ -284,66 +279,8 @@ describe('input draft persistence transforms', () => {
         inputImages: [{ id: imageB.id, dataUrl: '' }],
         maskDraft: null,
         maskEditorImageId: null,
-        referenceEditorTarget: null,
         updatedAt: 20,
       },
-    })
-  })
-})
-
-describe('input draft reference editor target', () => {
-  it('treats a draft with only referenceEditorTarget as non-empty', () => {
-    const draft: AgentInputDraft = {
-      prompt: '',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: { id: 'image-a', saveMode: 'replace-input' },
-      updatedAt: 1,
-    }
-
-    expect(isEmptyAgentInputDraft(draft)).toBe(false)
-  })
-
-  it('normalizes missing or invalid referenceEditorTarget to null', () => {
-    expect(normalizeAgentInputDraft({
-      prompt: '旧草稿',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: { id: 123, saveMode: 'invalid' },
-    }, 50)).toEqual({
-      prompt: '旧草稿',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: null,
-      updatedAt: 50,
-    })
-
-    expect(normalizeAgentInputDraft({
-      prompt: '旧草稿',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: { id: 'image-a', saveMode: 'append-input' },
-    }, 50)).toEqual({
-      prompt: '旧草稿',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: { id: 'image-a', saveMode: 'append-input' },
-      updatedAt: 50,
-    })
-  })
-
-  it('clears referenceEditorTarget when clearInputDraftState is invoked via restore', () => {
-    expect(restoreAgentInputDraftState({}, null)).toEqual({
-      prompt: '',
-      inputImages: [],
-      maskDraft: null,
-      maskEditorImageId: null,
-      referenceEditorTarget: null,
     })
   })
 })
