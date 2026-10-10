@@ -7,7 +7,7 @@ import { createMaskPreviewDataUrl } from '../lib/canvasImage'
 import { suppressGlobalClicks } from '../lib/clickSuppression'
 import { ensureImageCached, getCachedImage } from '../lib/imageCache'
 import ButtonTooltip from './input/buttonTooltip'
-import { EditIcon, RefreshIcon } from './icons'
+import { EditIcon, PlusIcon, RefreshIcon } from './icons'
 
 const MIN_SCALE = 1
 const MAX_SCALE = 10
@@ -15,6 +15,7 @@ const SWIPE_INTENT_THRESHOLD = 10
 const SWIPE_ACTION_THRESHOLD = 40
 const DOUBLE_TAP_DELAY = 350
 const DOUBLE_TAP_DISTANCE = 40
+const MAX_INPUT_IMAGES = 16
 
 type TouchIntent = 'none' | 'horizontal-swipe' | 'vertical-move' | 'zoom-pan' | 'pinch'
 
@@ -203,6 +204,31 @@ export default function Lightbox() {
     })
   }, [isInputImage, lightboxImageId, setReferenceEditorTarget])
 
+  const addToInputImages = useCallback(async () => {
+    if (!lightboxImageId) return
+    const currentInputImages = useStore.getState().inputImages
+    if (currentInputImages.length >= MAX_INPUT_IMAGES) {
+      showToast(`参考图数量已达上限（${MAX_INPUT_IMAGES} 张），无法继续添加`, 'error')
+      return
+    }
+    if (currentInputImages.some((img) => img.id === lightboxImageId)) {
+      showToast('这张图片已在参考图中', 'info')
+      return
+    }
+
+    try {
+      const dataUrl = (await ensureImageCached(lightboxImageId)) || src
+      if (!dataUrl) {
+        showToast('获取图片失败', 'error')
+        return
+      }
+      useStore.getState().addInputImage({ id: lightboxImageId, dataUrl })
+      showToast('已加入参考图', 'success')
+    } catch (err) {
+      showToast(`加入参考图失败：${err instanceof Error ? err.message : String(err)}`, 'error')
+    }
+  }, [lightboxImageId, showToast, src])
+
   // 键盘左右切换
   useEffect(() => {
     if (!lightboxImageId || !showNav) return
@@ -234,6 +260,7 @@ export default function Lightbox() {
         onReplace={openReplaceFilePicker}
         onEdit={editInputImage}
         onAdvancedEdit={openAdvancedEditor}
+        onAddToInput={addToInputImages}
       />
       <input
         ref={replaceFileInputRef}
@@ -262,10 +289,11 @@ interface LightboxInnerProps {
   onReplace: () => void
   onEdit: () => void
   onAdvancedEdit: () => void
+  onAddToInput: () => void
 }
 
 /** 内部组件：保证挂载时 DOM 已经存在，所有 ref / effect 都可靠 */
-function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, currentIndex, total, onPrev, onNext, showInputActions, isInputImage, editDisabled, onReplace, onEdit, onAdvancedEdit }: LightboxInnerProps) {
+function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, currentIndex, total, onPrev, onNext, showInputActions, isInputImage, editDisabled, onReplace, onEdit, onAdvancedEdit, onAddToInput }: LightboxInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef(Date.now())
   const editHint = useHintTooltip({ enabled: () => editDisabled })
@@ -771,10 +799,10 @@ function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, current
         </>
       )}
 
-      {/* 参考图操作 */}
+      {/* 底部操作栏 */}
       {showInputActions && !isZoomed && (
         <div className="absolute bottom-8 left-1/2 z-10 flex w-max -translate-x-1/2 items-center gap-2 rounded-2xl bg-white/90 dark:bg-black/60 p-2 backdrop-blur-xl border border-gray-200/80 dark:border-white/15 shadow-2xl transition-colors" onClick={(e) => e.stopPropagation()}>
-          {isInputImage && (
+          {isInputImage ? (
             <>
               <button
                 type="button"
@@ -804,6 +832,15 @@ function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, current
                 </button>
               </div>
             </>
+          ) : (
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-white/90 dark:hover:bg-white/15 transition active:scale-95"
+              onClick={onAddToInput}
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>加入参考图</span>
+            </button>
           )}
           <button
             type="button"
@@ -811,7 +848,7 @@ function LightboxInner({ src, imageId, maskPreviewSrc, onClose, showNav, current
             onClick={onAdvancedEdit}
           >
             <EditIcon className="w-4 h-4" />
-            <span>{isInputImage ? '高级编辑' : '高级编辑并加入参考图'}</span>
+            <span>高级编辑</span>
           </button>
         </div>
       )}
