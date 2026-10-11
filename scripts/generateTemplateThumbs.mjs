@@ -7,12 +7,18 @@ import { mkdir, readdir, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
+import { ProxyAgent, fetch as undiciFetch } from 'undici'
+
+const proxyUrl = process.env.https_proxy || process.env.http_proxy || process.env.ALL_PROXY
+const proxyDispatcher = proxyUrl ? new ProxyAgent(proxyUrl) : undefined
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DATA_FILES = [
   'src/lib/promptTemplateData.ts',
   'src/lib/houshifangPromptTemplates.ts',
   'src/lib/kkkmPromptTemplates.ts',
+  'src/lib/freestylePromptTemplates.ts',
+  'src/lib/youmindPromptTemplates.ts',
 ]
 const OUT_DIR = path.join(ROOT, 'public', 'templates')
 const THUMB_SIZE = 256
@@ -82,14 +88,15 @@ function toRawGithubUrl(url) {
 }
 
 async function download(url) {
+  const fetchFn = proxyDispatcher ? (u, opts) => undiciFetch(u, { dispatcher: proxyDispatcher, ...opts }) : fetch
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    const response = await fetchFn(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     return Buffer.from(await response.arrayBuffer())
   } catch (err) {
     const rawUrl = toRawGithubUrl(url)
     if (!rawUrl) throw err
-    const response = await fetch(rawUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    const response = await fetchFn(rawUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
     if (!response.ok) throw new Error(`HTTP ${response.status}（镜像与 raw 均失败）`)
     return Buffer.from(await response.arrayBuffer())
   }

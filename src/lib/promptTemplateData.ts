@@ -1,6 +1,8 @@
 import type { PromptTemplateInput } from './promptTemplates'
 import { HOUSHIFANG_PROMPT_TEMPLATES } from './houshifangPromptTemplates'
 import { KKKM_PROMPT_TEMPLATES } from './kkkmPromptTemplates'
+import { FREESTYLE_PROMPT_TEMPLATES } from './freestylePromptTemplates'
+import { YOUMIND_PROMPT_TEMPLATES } from './youmindPromptTemplates'
 
 const BASE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
@@ -9474,4 +9476,6 @@ export const EXPANDED_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   ...BASE_PROMPT_TEMPLATES,
   ...EXTRA_CURATED_PROMPT_TEMPLATES,
   ...KKKM_PROMPT_TEMPLATES,
+  ...FREESTYLE_PROMPT_TEMPLATES,
+  ...YOUMIND_PROMPT_TEMPLATES,
 ]
