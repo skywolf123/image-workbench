@@ -2,13 +2,34 @@ import type { PromptTemplateInput } from "./promptTemplates"
 
 export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
+    "id": "freestyle-case326",
+    "title": "红蓝撞色高跟诱惑",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#326），可直接替换主体与变量复用。",
+    "tags": [
+      "红蓝撞色高跟诱惑",
+      "插画",
+      "精选"
+    ],
+    "source": "freestylefly/awesome-gpt-image-2 社区案例",
+    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-326",
+    "recommendedSize": "4:5 / 1:1",
+    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case326.jpg",
+    "imageAlt": "红蓝撞色高跟诱惑示例图",
+    "prompt": "{\n  \"global_settings\": {\n    \"resolution\": \"8K\",\n    \"quality\": \"超高清晰度\",\n    \"aspect_ratio\": \"2:3\",\n    \"render_style\": \"AI编辑、高细节3D渲染\",\n    \"lighting_quality\": \"柔和影棚光与逼真阴影\",\n    \"sharpness\": \"极致清晰、锐利边缘\",\n    \"noise\": \"无\",\n    \"compression\": \"无\"\n  },\n  \"image_style\": {\n    \"subject\": {\n      \"character_type\": \"风格化3D卡通女性\",\n      \"pose\": \"微微后仰靠在背景上\",\n      \"expression\": \"俏皮、嘴唇轻撅、眼睛斜视\",\n      \"hair\": {\n        \"color\": \"棕色\",\n        \"style\": \"短发、凌乱\",\n        \"accessories\": \"红色太阳镜架在头顶\"\n      }\n    },\n    \"clothing\": {\n      \"dress\": \"贴身蓝色罗纹吊带裙\",\n      \"footwear\": \"红色高跟凉鞋配蝴蝶结\"\n    },\n    \"color_palette\": [\n      \"大胆红色\",\n      \"深蓝\"\n    ],\n    \"background\": {\n      \"color\": \"纯红色\",\n      \"texture\": \"光滑哑光表面\"\n    },\n    \"lighting\": {\n      \"direction\": \"一侧柔和定向光\",\n      \"shadow\": \"在红色背景上投下清晰影子\"\n    },\n    \"composition\": {\n      \"framing\": \"全身\",\n      \"pose_emphasis\": \"弯曲身姿、交叉双腿\"\n    }\n  }\n}",
+    "tips": [
+      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
+      "若画面包含文字排版，建议明确指定标题与文案层级。"
+    ]
+  },
+  {
     "id": "freestyle-case332",
     "title": "茶π产品宣传海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#332），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#332），可直接替换主体与变量复用。",
     "tags": [
       "茶π产品宣传海报",
-      "视觉",
+      "海报与排版",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -25,11 +46,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case333",
     "title": "AI 眼镜爆炸拆解图",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#333），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#333），可直接替换主体与变量复用。",
     "tags": [
       "AI 眼镜爆炸拆",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -47,10 +68,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case335",
     "title": "朋友圈截图生成",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#335），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#335），可直接替换主体与变量复用。",
     "tags": [
       "朋友圈截图生成",
-      "视觉",
+      "UI 与界面",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -67,11 +88,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case336",
     "title": "个人网页视觉设计",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#336），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#336），可直接替换主体与变量复用。",
     "tags": [
       "个人网页视觉设计",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -88,11 +109,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case337",
     "title": "《短歌行》诗词意境图",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#337），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#337），可直接替换主体与变量复用。",
     "tags": [
       "《短歌行》诗词意",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -109,11 +130,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case338",
     "title": "《赤壁怀古》长卷图",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#338），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#338），可直接替换主体与变量复用。",
     "tags": [
       "《赤壁怀古》长卷",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -130,11 +151,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case340",
     "title": "彼岸花丛中的红妆女子",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#340），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#340），可直接替换主体与变量复用。",
     "tags": [
       "彼岸花丛中的红妆",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -152,10 +173,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case352",
     "title": "西楚霸王国风暗黑海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#352），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#352），可直接替换主体与变量复用。",
     "tags": [
       "西楚霸王国风暗黑",
-      "视觉",
+      "海报与排版",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -172,11 +193,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case368",
     "title": "印度餐厅菜单改造宣传图",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#368），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#368），可直接替换主体与变量复用。",
     "tags": [
       "印度餐厅菜单改造",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -193,11 +214,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case374",
     "title": "彩色潦草小狗线条风格重绘",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#374），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#374），可直接替换主体与变量复用。",
     "tags": [
       "彩色潦草小狗线条",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -212,13 +233,34 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
+    "id": "freestyle-case397",
+    "title": "街舞角色设定参考图",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#397），可直接替换主体与变量复用。",
+    "tags": [
+      "街舞角色设定参考",
+      "插画",
+      "精选"
+    ],
+    "source": "freestylefly/awesome-gpt-image-2 社区案例",
+    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-397",
+    "recommendedSize": "4:5 / 1:1",
+    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case397.jpg",
+    "imageAlt": "街舞角色设定参考图示例图",
+    "prompt": "角色设定图布局，聚焦于一位18岁的亚裔女性街舞舞者。包含4个大型、高细节度的全身动态舞姿（突出舞蹈动作，面部清晰）。侧边附一条清晰的多角度参考条，仅含3个精细头部特写（正面、侧面、3/4侧面）。最大限度减少文字元素，将像素空间优先用于面部细节刻画。背景为粗砺工业风，搭配写实光影效果",
+    "tips": [
+      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
+      "若画面包含文字排版，建议明确指定标题与文案层级。"
+    ]
+  },
+  {
     "id": "freestyle-case400",
     "title": "多风格签名选择海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#400），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#400），可直接替换主体与变量复用。",
     "tags": [
       "多风格签名选择海",
-      "视觉",
+      "海报与排版",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -235,11 +277,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case402",
     "title": "3D 小红书个人资料卡",
-    "category": "文档与教程",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#402），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#402），可直接替换主体与变量复用。",
     "tags": [
       "3D 小红书个人",
-      "视觉",
+      "卡通IP",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -256,11 +298,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case403",
     "title": "小红书数字破屏 3D 女孩",
-    "category": "文档与教程",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#403），可直接替换主体与变量后复用。",
+    "category": "海报与排版",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#403），可直接替换主体与变量复用。",
     "tags": [
       "小红书数字破屏 ",
-      "视觉",
+      "海报与排版",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -278,10 +320,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case404",
     "title": "豪华社媒破屏商业广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#404），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#404），可直接替换主体与变量复用。",
     "tags": [
       "豪华社媒破屏商业",
-      "视觉",
+      "商品与电商",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -296,13 +338,34 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
+    "id": "freestyle-case415",
+    "title": "东方神话人物志百科海报",
+    "category": "海报与排版",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#415），可直接替换主体与变量复用。",
+    "tags": [
+      "东方神话人物志百",
+      "海报与排版",
+      "精选"
+    ],
+    "source": "freestylefly/awesome-gpt-image-2 社区案例",
+    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-415",
+    "recommendedSize": "4:5 / 1:1",
+    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case415.jpg",
+    "imageAlt": "东方神话人物志百科海报示例图",
+    "prompt": "请基于【孙悟空】生成一张竖版 A4「东方神话人物志」百科海报。\n\n你是一名东方神话视觉设定师、古籍图谱设计师和中文信息图设计师。请根据【人物名称】在东方神话、民间传说、古籍、戏曲、文学或传统文化中的已知形象，生成一张内容完整、视觉统一、具有东方神话气质的人物档案海报。\n\n最重要原则：\n全部内容必须围绕【人物名称】展开，不要套用通用神仙模板。\n人物形象、法器、坐骑、神通、典故、象征物、背景场景都必须符合【人物名称】的神话设定。\n如果该人物存在多个传说版本，请采用最广为人知的版本；存在异文时，可以在相关板块简短标注“传说版本不一”。\n不确定的信息不要强行编造，可写“民间传说中多有异文”或“相关记载较少”。\n不要使用北欧符文、维京图腾、哥特边框、西方盔甲、欧式城堡、西幻恶魔角、赛博朋克元素。\n整体必须是东方神话审美，而不是“西幻人物换中式衣服”。\n整体视觉风格：\n东方神话史诗感，融合《山海经》异兽图谱、敦煌壁画、青绿山水、唐代人物画、宋元古画、青铜器纹样、古籍注疏和符箓篆刻风格。画面庄重、神秘、古雅、华丽但克制。\n画面构图：\n\n竖版 A4 海报，中轴对称布局。中央为【人物名称】的全身或半身主视觉，姿态庄严，有神性和叙事感。人物服饰、发冠、法器、神态、灵兽、背景都要符合该人物传说。左右两侧为信息卡片，底部为核心总结。四周使用云雷纹、回纹、青铜纹、祥云纹、卷草纹、山海纹、篆刻印章式边框。\n主标题：“【人物名称】”\n副标题：“东方神话人物志｜根据该人物神话传说生成”\n顶部精神题记：请根据【人物名称】的核心精神，自动生成一句古雅、凝练、有哲学意味的题记。题记要体现该人物背后的价值观、生命姿态或精神内核，而不是说明性文字。不要写“非史实考证”“仅供参考”“传说版本”等免责声明。字数控制在 12-28 字，适合放在标题下方。题记应与人物高度绑定，不要套用“守护苍生”“大道无边”等空泛句式。\n\n请生成以下内容板块：\n【1. 神格身份】说明【人物名称】在东方神话体系中的身份定位。\n【2. 神话源流】说明该人物主要出自哪些神话、古籍、民间传说、小说、戏曲或宗教信仰。\n【3. 司职权柄】总结该人物掌管或象征的领域。\n【4. 形象特征】描述该人物的典型外貌、服饰、神态、姿态和视觉气质。\n【5. 法器神通】展示该人物最具代表性的法器、兵器、符咒、神通或能力。\n【6. 灵兽坐骑 / 随身象征】如果【人物名称】有坐骑、灵兽、伴生生灵，请展示其名称、形态和寓意。如果没有明确坐骑，请改为“随身象征物”或“相关意象”。不要强行给每个人物安排龙、凤、仙鹤或麒麟。\n【7. 典故出处】列出 2-4 个与【人物名称】相关的经典故事、传说片段或文化典故。不要虚构不存在的典故。若版本不一，请标注“异文较多”。\n【8. 象征意象】提炼该人物最核心的视觉符号。符号必须与【人物名称】相关。\n【9. 神话谱系】说明该人物与其他神话人物、阵营、族属或体系的关系。如果谱系不明确，请写“谱系传说不一”。\n【10. 文化影响】说明该人物在民俗、节日、祭祀、文学、戏曲、绘画、庙宇、影视或现代文化中的影响。\n【11. 精神内核】从神话叙事角度总结该人物象征的精神。这里只分析神话形象，不推断真实人物性格。\n【12. 核心总结】用一段古雅但易懂的中文总结【人物名称】：“【人物名称】在东方神话中象征……，其形象融合了……，代表着……。”\n\n视觉版式要求：\n顶部：大标题 + 副标题 + 精神题记。\n中央：人物主视觉，气势庄重，细节丰富。\n左侧栏目：神格身份、神话源流、司职权柄、形象特征、法器神通。\n右侧栏目：灵兽坐骑/随身象征、典故出处、象征意象、神话谱系、文化影响。\n底部：精神内核 + 核心总结。\n可加入小型图标、注释线、古籍标签、卷轴卡片、青铜铭牌、朱砂印章、符箓纹样。\n信息卡片像古书页、玉简、青铜牌、卷轴或碑铭，不要像现代科技 UI。\n\n材质与纹样：\n宣纸肌理、矿物颜料、鎏金线条、朱砂印章、墨色晕染、青铜器铭文、云雷纹、回纹、祥云纹、山水纹、敦煌藻井纹样。\n\n配色规则：\n根据【人物名称】的属性自动选择东方配色。火焰 / 战斗 / 护法：朱砂、玄黑、鎏金、赤红。月亮 / 水系 / 清冷神祇：黛青、银白、月白、石蓝。山川 / 木系 / 自然神灵：石绿、青黛、玉白、赭石。帝王 / 天庭 / 尊神：鎏金、玄黑、朱砂、玉白。妖灵 / 山海异兽：墨黑、铜绿、暗金、赭红。不要所有人物都使用同一套配色。\n\n文字要求：\n中文必须清晰可读，标题大气，正文简短准确。不要乱码、伪文字、错别字、文字重叠或裁切。如果空间不足，优先压缩正文，但保留所有板块标题。\n\n避免：\n北欧符文、维京风、哥特边框、西方盔甲、欧式城堡、魔幻游戏 UI、赛博朋克、现代科技感、过度暗黑、随机龙凤、无关法器、模板化神仙形象、与【人物名称】无关的典故、空泛精神题记。",
+    "tips": [
+      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
+      "若画面包含文字排版，建议明确指定标题与文案层级。"
+    ]
+  },
+  {
     "id": "freestyle-case451",
     "title": "韩国海滩日落时尚人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#451），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#451），可直接替换主体与变量复用。",
     "tags": [
       "韩国海滩日落时尚",
-      "视觉",
+      "人物写真",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -319,11 +382,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case453",
     "title": "企业级商用画册视觉系统",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#453），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#453），可直接替换主体与变量复用。",
     "tags": [
       "企业级商用画册视",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -340,11 +403,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case459",
     "title": "品牌奶茶 KV 概念海报",
-    "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#459），可直接替换主体与变量后复用。",
+    "category": "海报与排版",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#459），可直接替换主体与变量复用。",
     "tags": [
       "品牌奶茶 KV ",
-      "视觉",
+      "海报与排版",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -361,11 +424,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case463",
     "title": "黑色吊带袜单款图鉴展示",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#463），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#463），可直接替换主体与变量复用。",
     "tags": [
       "黑色吊带袜单款图",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -383,10 +446,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case465",
     "title": "逆光美背女性情绪写真",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#465），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#465），可直接替换主体与变量复用。",
     "tags": [
       "逆光美背女性情绪",
-      "视觉",
+      "人物写真",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -404,10 +467,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case467",
     "title": "泳装杂志九宫格广告页",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#467），可直接替换主体与变量后复用。",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#467），可直接替换主体与变量复用。",
     "tags": [
       "泳装杂志九宫格广",
-      "视觉",
+      "商品与电商",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -424,11 +487,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case468",
     "title": "霓虹涂鸦展会自拍",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#468），可直接替换主体与变量后复用。",
+    "category": "人物写真",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#468），可直接替换主体与变量复用。",
     "tags": [
       "霓虹涂鸦展会自拍",
-      "视觉",
+      "人物写真",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -445,11 +508,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case469",
     "title": "导览式科普绘本",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#469），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#469），可直接替换主体与变量复用。",
     "tags": [
       "导览式科普绘本",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",
@@ -466,11 +529,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
   {
     "id": "freestyle-case470",
     "title": "本地生活小店异形展架",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 的精选案例（#470），可直接替换主体与变量后复用。",
+    "category": "插画",
+    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#470），可直接替换主体与变量复用。",
     "tags": [
       "本地生活小店异形",
-      "视觉",
+      "插画",
       "精选"
     ],
     "source": "freestylefly/awesome-gpt-image-2 社区案例",

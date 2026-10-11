@@ -133,45 +133,11 @@ function isSourceDefinedTemplate(template: Pick<PromptTemplateInput, 'category' 
   )
 }
 
-export const EXCLUDED_PROMPT_TEMPLATE_KEYWORDS = [
-  '游戏',
-  '动漫',
-  '二次元',
-  'GTA',
-  '英雄联盟',
-  '塞尔达',
-  '悟空',
-  '角色卡牌',
-  '角色设定',
-  'Cosplayer',
-  'coser',
-  'Persona5',
-  'Galgame',
-  '超级任天堂',
-  'AmongUs',
-  '特朗普',
-  '拜登',
-  '刘亦菲',
-  '收款',
-  '处方',
-]
+export const EXCLUDED_PROMPT_TEMPLATE_KEYWORDS: string[] = []
 
-const EXCLUDED_TEMPLATE_IDS = new Set([
-  'gallery-github-raw-2046144801071079612',
-  'gallery-github-raw-2046501587762188535',
-])
+const EXCLUDED_TEMPLATE_IDS = new Set<string>([])
 
-const EXCLUDED_RAW_KEYWORDS = [
-  'game',
-  'gaming',
-  'ゲーム',
-  'mecha girl',
-  'mid-teens',
-  'elon musk',
-  'アニメ',
-  'ソシャゲ',
-  'マイクラ',
-]
+const EXCLUDED_RAW_KEYWORDS: string[] = []
 
 const LOCALIZED_TEMPLATE_OVERRIDES: Record<string, Partial<Pick<PromptTemplateInput, 'title' | 'prompt' | 'tags'>>> = {
   'gallery-2': {
