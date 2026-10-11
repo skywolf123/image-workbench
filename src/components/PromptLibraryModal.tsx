@@ -10,6 +10,13 @@ import {
   type PromptTemplateCategory,
   type PromptTemplateSubcategory,
 } from '../lib/promptTemplates'
+import {
+  isTemplateSubjectReplaceable,
+  resolveTemplateSize,
+  composePromptWithImageReference,
+} from '../lib/promptTemplateReference'
+import { createInputImageFromFile } from '../store'
+import type { InputImage } from '../types'
 import { copyTextToClipboard, getClipboardFailureMessage } from '../lib/clipboard'
 import { useStore } from '../store'
 import { useCloseOnEscape } from '../hooks/useCloseOnEscape'
@@ -27,13 +34,15 @@ function focusPromptInput() {
   })
 }
 
-function TemplateBadge({ children, tone = 'default' }: { children: string; tone?: 'default' | 'warm' | 'ink' }) {
+function TemplateBadge({ children, tone = 'default' }: { children: string; tone?: 'default' | 'warm' | 'ink' | 'blue' }) {
   const toneClass =
     tone === 'warm'
       ? 'bg-amber-100 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'
       : tone === 'ink'
         ? 'bg-zinc-900 text-zinc-50 dark:bg-white/[0.08] dark:text-zinc-200'
-        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300'
+        : tone === 'blue'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300'
+          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300'
 
   return (
     <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-1 text-[11px] font-semibold leading-none ${toneClass}`}>
@@ -168,9 +177,19 @@ function TemplatePreviewImage({
   )
 }
 
+function CameraPlusIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
+  )
+}
+
 function TemplateDetailPanel({
   template,
   compact = false,
+  workspaceImages = [],
   onApply,
   onAppend,
   onCopy,
@@ -179,13 +198,32 @@ function TemplateDetailPanel({
 }: {
   template: PromptTemplate
   compact?: boolean
-  onApply: (template: PromptTemplate) => void
+  workspaceImages?: InputImage[]
+  onApply: (template: PromptTemplate, referenceImage?: InputImage | null, syncSize?: boolean) => void
   onAppend: (template: PromptTemplate) => void
   onCopy: (template: PromptTemplate) => void
   onZoom: (template: PromptTemplate) => void
   onClose?: () => void
 }) {
   const showSubcategoryBadge = template.subcategory !== template.category
+  const isSubjectReplaceable = isTemplateSubjectReplaceable(template)
+  const [referenceImage, setReferenceImage] = useState<InputImage | null>(null)
+  const [syncRecommendedSize, setSyncRecommendedSize] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    try {
+      const inputImg = await createInputImageFromFile(file)
+      if (inputImg) setReferenceImage(inputImg)
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <div className={`flex min-h-full flex-col ${compact ? 'relative px-4 pb-4 pt-3' : 'p-4 sm:p-5'}`}>
@@ -204,6 +242,7 @@ function TemplateDetailPanel({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <TemplateBadge>{template.category}</TemplateBadge>
           {showSubcategoryBadge && <TemplateBadge tone="ink">{template.subcategory}</TemplateBadge>}
+          {isSubjectReplaceable && <TemplateBadge tone="blue">主体替换</TemplateBadge>}
           <TemplateBadge tone="warm">{template.recommendedSize}</TemplateBadge>
         </div>
         <h3 className={`${compact ? 'text-lg' : 'text-xl'} font-bold leading-tight text-zinc-950 dark:text-zinc-50`}>{template.title}</h3>
@@ -216,7 +255,7 @@ function TemplateDetailPanel({
             src={template.imageUrl}
             alt={template.imageAlt ?? template.title}
             className={`bg-zinc-100 transition duration-200 group-hover:scale-[1.015] dark:bg-zinc-950 ${
-              compact ? 'max-h-[38vh]' : 'max-h-[62vh] sm:max-h-[520px] lg:max-h-[54vh]'
+              compact ? 'max-h-[34vh]' : 'max-h-[56vh] sm:max-h-[480px] lg:max-h-[48vh]'
             }`}
             fit="contain"
             sizing="intrinsic"
@@ -236,21 +275,119 @@ function TemplateDetailPanel({
           <TemplatePreviewImage
             src={template.imageUrl}
             alt={template.imageAlt ?? template.title}
-            className={compact ? 'max-h-[38vh]' : 'max-h-[62vh] sm:max-h-[520px] lg:max-h-[54vh]'}
+            className={compact ? 'max-h-[34vh]' : 'max-h-[56vh] sm:max-h-[480px] lg:max-h-[48vh]'}
             fit="contain"
             sizing="intrinsic"
           />
         </div>
       )}
 
+      {/* 参考主体图选择槽位 */}
+      <div className="mt-4 rounded-2xl border border-blue-200/80 bg-blue-50/50 p-3.5 transition dark:border-blue-500/20 dark:bg-blue-950/20">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-300">
+            <CameraPlusIcon />
+            <span>商品主体 / 参考图</span>
+            {isSubjectReplaceable && (
+              <span className="rounded bg-blue-200/70 px-1.5 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-800/40 dark:text-blue-200">
+                推荐垫图
+              </span>
+            )}
+          </div>
+          {referenceImage && (
+            <button
+              type="button"
+              onClick={() => setReferenceImage(null)}
+              className="text-[11px] text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400"
+            >
+              移除参考图
+            </button>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {referenceImage ? (
+          <div className="mt-2.5 flex items-center gap-3 rounded-xl border border-blue-200/70 bg-white p-2 shadow-sm dark:border-white/[0.08] dark:bg-zinc-900">
+            <img
+              src={referenceImage.dataUrl}
+              alt="参考主体"
+              className="h-12 w-12 shrink-0 rounded-lg object-contain bg-zinc-100 dark:bg-zinc-800"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">已选主体参考图</div>
+              <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                套用时将作为 @图1 注入，并自动优化保真指令
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60"
+            >
+              更换
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2.5">
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-300 bg-white/80 py-2.5 text-xs font-medium text-blue-700 shadow-sm transition hover:bg-white hover:border-blue-400 disabled:opacity-50 dark:border-blue-400/30 dark:bg-zinc-900/80 dark:text-blue-300 dark:hover:bg-zinc-900"
+            >
+              <CameraPlusIcon />
+              <span>{isUploading ? '处理中...' : '上传商品图 / 主体图（支持白底/抠图）'}</span>
+            </button>
+
+            {workspaceImages.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">选用当前工作台输入图：</span>
+                {workspaceImages.slice(0, 4).map((img, idx) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    onClick={() => setReferenceImage(img)}
+                    className="group relative h-7 w-7 overflow-hidden rounded-md border border-zinc-200 hover:border-blue-400 dark:border-white/[0.1]"
+                    title={`选用第 ${idx + 1} 张参考图`}
+                  >
+                    <img src={img.dataUrl} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+          <input
+            type="checkbox"
+            checked={syncRecommendedSize}
+            onChange={(e) => setSyncRecommendedSize(e.target.checked)}
+            className="rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700"
+          />
+          <span>自动切换为推荐比例 ({template.recommendedSize})</span>
+        </label>
+      </div>
+
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => onApply(template)}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-3 py-3 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+          onClick={() => onApply(template, referenceImage, syncRecommendedSize)}
+          className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-white shadow-sm transition ${
+            referenceImage
+              ? 'bg-blue-600 shadow-blue-600/20 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400'
+              : 'bg-emerald-600 shadow-emerald-600/20 hover:bg-emerald-700 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300'
+          }`}
         >
           <ApplyIcon />
-          填入提示词
+          {referenceImage ? '带参考图套用' : '填入提示词'}
         </button>
         <button
           type="button"
@@ -319,6 +456,9 @@ export default function PromptLibraryModal() {
   const setShowPromptLibrary = useStore((s) => s.setShowPromptLibrary)
   const prompt = useStore((s) => s.prompt)
   const setPrompt = useStore((s) => s.setPrompt)
+  const inputImages = useStore((s) => s.inputImages)
+  const addInputImage = useStore((s) => s.addInputImage)
+  const setParams = useStore((s) => s.setParams)
   const showToast = useStore((s) => s.showToast)
   const setConfirmDialog = useStore((s) => s.setConfirmDialog)
 
@@ -405,11 +545,32 @@ export default function PromptLibraryModal() {
   const selectedTemplate = filteredTemplates.find((template) => template.id === selectedId) ?? filteredTemplates[0]
   const mobileDetailTemplate = filteredTemplates.find((template) => template.id === mobileDetailId) ?? null
 
-  const applyTemplate = (template: PromptTemplate) => {
+  const applyTemplate = (
+    template: PromptTemplate,
+    referenceImg?: InputImage | null,
+    syncSize = true,
+  ) => {
     const writeTemplate = () => {
-      setPrompt(template.prompt)
+      let finalPrompt = template.prompt
+      if (referenceImg) {
+        addInputImage(referenceImg)
+        const imageIndex = inputImages.findIndex((img) => img.id === referenceImg.id)
+        const mentionLabel = imageIndex >= 0 ? `@图${imageIndex + 1}` : (inputImages.length > 0 ? `@图${inputImages.length + 1}` : '@图1')
+        finalPrompt = composePromptWithImageReference(template.prompt, mentionLabel, {
+          isProduct: template.category === '商品与电商' || template.subcategory.includes('商品') || template.subcategory.includes('样机'),
+        })
+      }
+
+      if (syncSize && template.recommendedSize) {
+        const resolvedSize = resolveTemplateSize(template.recommendedSize)
+        if (resolvedSize) {
+          setParams({ size: resolvedSize })
+        }
+      }
+
+      setPrompt(finalPrompt)
       close()
-      showToast('已填入模板', 'success')
+      showToast(referenceImg ? '已带参考图套用模板' : '已填入模板', 'success')
       focusPromptInput()
     }
 
@@ -670,6 +831,7 @@ export default function PromptLibraryModal() {
                   {filteredTemplates.map((template, index) => {
                     const selected = selectedTemplate?.id === template.id
                     const showSubcategoryBadge = template.subcategory !== template.category
+                    const isSubjectReplaceable = isTemplateSubjectReplaceable(template)
 
                     return (
                       <div
@@ -706,6 +868,7 @@ export default function PromptLibraryModal() {
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
                               <TemplateBadge>{template.category}</TemplateBadge>
                               {showSubcategoryBadge && <TemplateBadge tone="ink">{template.subcategory}</TemplateBadge>}
+                              {isSubjectReplaceable && <TemplateBadge tone="blue">主体替换</TemplateBadge>}
                               <TemplateBadge tone="warm">{template.recommendedSize}</TemplateBadge>
                             </div>
                             <h3 className="text-[15px] font-bold leading-snug text-zinc-950 dark:text-zinc-50">
@@ -745,6 +908,7 @@ export default function PromptLibraryModal() {
             {selectedTemplate ? (
               <TemplateDetailPanel
                 template={selectedTemplate}
+                workspaceImages={inputImages}
                 onApply={applyTemplate}
                 onAppend={appendTemplate}
                 onCopy={copyTemplatePrompt}
@@ -772,6 +936,7 @@ export default function PromptLibraryModal() {
                 <TemplateDetailPanel
                   template={mobileDetailTemplate}
                   compact
+                  workspaceImages={inputImages}
                   onApply={applyTemplate}
                   onAppend={appendTemplate}
                   onCopy={copyTemplatePrompt}
