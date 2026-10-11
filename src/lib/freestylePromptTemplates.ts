@@ -5,7 +5,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-1",
     "title": "信息图可视化设计",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#1：信息图可视化设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "信息图可视化设计",
       "图表与信息图",
@@ -26,7 +26,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-2",
     "title": "社媒界面截图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#2：社媒界面截图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "社媒界面截图",
       "UI 与界面",
@@ -47,7 +47,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-3",
     "title": "足球主题电影海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#3：足球主题电影海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "足球主题电影海报",
       "海报与排版",
@@ -68,7 +68,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-4",
     "title": "老干妈风味",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#4：老干妈风味），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "老干妈风味",
       "插画",
@@ -89,7 +89,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-5",
     "title": "主题海报版式设计",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#5：主题海报版式设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "主题海报版式设计",
       "海报与排版",
@@ -110,7 +110,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-6",
     "title": "插画艺术创作图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#6：插画艺术创作图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "插画艺术创作图",
       "插画",
@@ -131,7 +131,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-7",
     "title": "应用界面样机图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#7：应用界面样机图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "应用界面样机图",
       "UI 与界面",
@@ -148,12 +148,11 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
       "若画面包含文字排版，建议明确指定标题与文案层级。"
     ]
   },
-
   {
     "id": "freestyle-case-21",
     "title": "直播界面设计图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#21：直播界面设计图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "直播界面设计图",
       "UI 与界面",
@@ -174,7 +173,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-22",
     "title": "插画艺术风格创作",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#22：插画艺术风格创作），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "插画艺术风格创作",
       "插画",
@@ -195,7 +194,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-24",
     "title": "漫画分镜叙事设计",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#24：漫画分镜叙事设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "漫画分镜叙事设计",
       "插画",
@@ -216,7 +215,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-25",
     "title": "综合应用场景图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#25：综合应用场景图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "综合应用场景图",
       "插画",
@@ -237,7 +236,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-26",
     "title": "建筑空间场景图",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#26：建筑空间场景图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "建筑空间场景图",
       "品牌与空间",
@@ -258,7 +257,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-27",
     "title": "人物角色设定图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#27：人物角色设定图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "人物角色设定图",
       "插画",
@@ -279,7 +278,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-28",
     "title": "写实摄影风格创作",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#28：写实摄影风格创作），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "写实摄影风格创作",
       "人物写真",
@@ -300,7 +299,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-29",
     "title": "电影感叙事场景图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#29：电影感叙事场景图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "电影感叙事场景图",
       "插画",
@@ -321,7 +320,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-30",
     "title": "写实摄影风格图",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#30：写实摄影风格图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "写实摄影风格图",
       "人物写真",
@@ -342,7 +341,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-31",
     "title": "人像写实摄影图",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#31：人像写实摄影图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "人像写实摄影图",
       "人物写真",
@@ -363,7 +362,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-33",
     "title": "电商商品展示设计",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#33：电商商品展示设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "电商商品展示设计",
       "商品与电商",
@@ -384,7 +383,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-36",
     "title": "品牌徽标设计图",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#36：品牌徽标设计图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌徽标设计图",
       "品牌与空间",
@@ -405,7 +404,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-44",
     "title": "古风历史题材图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#44：古风历史题材图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "古风历史题材图",
       "插画",
@@ -426,7 +425,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-53",
     "title": "室内空间渲染图",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#53：室内空间渲染图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "室内空间渲染图",
       "品牌与空间",
@@ -447,7 +446,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-57",
     "title": "界面交互设计图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#57：界面交互设计图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "界面交互设计图",
       "UI 与界面",
@@ -468,7 +467,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-71",
     "title": "关系图谱信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#71：关系图谱信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "关系图谱信息图",
       "图表与信息图",
@@ -489,7 +488,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-91",
     "title": "游戏界面截图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#91：游戏界面截图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "游戏界面截图",
       "UI 与界面",
@@ -510,7 +509,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-92",
     "title": "视频封面界面图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#92：视频封面界面图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "视频封面界面图",
       "UI 与界面",
@@ -531,7 +530,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-94",
     "title": "绘画艺术风格图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#94：绘画艺术风格图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "绘画艺术风格图",
       "插画",
@@ -552,7 +551,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-95",
     "title": "品牌视觉识别图",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#95：品牌视觉识别图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌视觉识别图",
       "品牌与空间",
@@ -573,7 +572,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-105",
     "title": "动漫插画创作图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#105：动漫插画创作图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "动漫插画创作图",
       "插画",
@@ -594,7 +593,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-128",
     "title": "建筑空间场景渲染",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#128：建筑空间场景渲染），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "建筑空间场景渲染",
       "品牌与空间",
@@ -615,7 +614,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-138",
     "title": "封面排版设计图",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#138：封面排版设计图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "封面排版设计图",
       "海报与排版",
@@ -636,7 +635,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-160",
     "title": "品牌吉祥物设定图",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#160：品牌吉祥物设定图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌吉祥物设定图",
       "品牌与空间",
@@ -657,7 +656,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-164",
     "title": "特朗普太空直播间破千万",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#164：特朗普太空直播间破千万），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "特朗普太空直播间",
       "插画",
@@ -675,73 +674,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-166",
-    "title": "十二黄金圣斗士卡牌合集",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#166：十二黄金圣斗士卡牌合集），已完成中文标准化转写与格式化。",
-    "tags": [
-      "十二黄金圣斗士卡",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-166",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case166.jpg",
-    "imageAlt": "十二黄金圣斗士卡牌合集示例图",
-    "prompt": "生成圣斗士星矢12个黄金圣斗士的12宫格卡牌图片，每张卡牌上写上对应的中文名，每行4个，宽高比16:9。",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
-    "id": "freestyle-case-167",
-    "title": "大唐玄武门之变的朋友圈",
-    "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#167：大唐玄武门之变的朋友圈），已完成中文标准化转写与格式化。",
-    "tags": [
-      "大唐玄武门之变的",
-      "UI 与界面",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-167",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case167.jpg",
-    "imageAlt": "大唐玄武门之变的朋友圈示例图",
-    "prompt": "玄武门之变的朋友圈",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
-    "id": "freestyle-case-168",
-    "title": "手写中西药方图片",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#168：手写中西药方图片），已完成中文标准化转写与格式化。",
-    "tags": [
-      "手写中西药方图片",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-168",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case168.jpg",
-    "imageAlt": "手写中西药方图片示例图",
-    "prompt": "生成一张手写中/西医药方图",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-181",
     "title": "潮流视角重塑精致商品广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#181：潮流视角重塑精致商品广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "潮流视角重塑精致",
       "商品与电商",
@@ -759,52 +695,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-191",
-    "title": "史诗级科幻电影海报设计",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#191：史诗级科幻电影海报设计），已完成中文标准化转写与格式化。",
-    "tags": [
-      "史诗级科幻电影海",
-      "海报与排版",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-191",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case191.jpg",
-    "imageAlt": "史诗级科幻电影海报设计示例图",
-    "prompt": "创建一张科幻电影海报",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
-    "id": "freestyle-case-192",
-    "title": "电商商品展示图",
-    "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#192：电商商品展示图），已完成中文标准化转写与格式化。",
-    "tags": [
-      "电商商品展示图",
-      "商品与电商",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-192",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case192.jpg",
-    "imageAlt": "电商商品展示图示例图",
-    "prompt": "AI智能眼镜电商详情图",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-195",
     "title": "超写实与水墨的梦幻融合",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#195：超写实与水墨的梦幻融合），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "超写实与水墨的梦",
       "插画",
@@ -825,7 +719,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-197",
     "title": "英雄联盟特朗普中路对决哈梅内伊",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#197：英雄联盟特朗普中路对决哈梅内伊），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "英雄联盟特朗普中",
       "插画",
@@ -846,7 +740,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-199",
     "title": "超写实海滩高角度手机自拍",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#199：超写实海滩高角度手机自拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "超写实海滩高角度",
       "UI 与界面",
@@ -867,7 +761,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-201",
     "title": "三甲医院真实门诊处方笺",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#201：三甲医院真实门诊处方笺），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "三甲医院真实门诊",
       "插画",
@@ -888,7 +782,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-202",
     "title": "宅男必看绝美二次元少女",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#202：宅男必看绝美二次元少女），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "宅男必看绝美二次",
       "插画",
@@ -909,7 +803,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-207",
     "title": "黑神话潘金莲绝美游戏封面",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#207：黑神话潘金莲绝美游戏封面），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑神话潘金莲绝美",
       "插画",
@@ -930,7 +824,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-208",
     "title": "樱花树下害羞双马尾少女",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#208：樱花树下害羞双马尾少女），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "樱花树下害羞双马",
       "插画",
@@ -951,7 +845,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-209",
     "title": "神话三国枪战世界",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#209：神话三国枪战世界），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "神话三国枪战世界",
       "插画",
@@ -972,7 +866,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-213",
     "title": "金瓶梅古风开放世界游戏截图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#213：金瓶梅古风开放世界游戏截图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "金瓶梅古风开放世",
       "UI 与界面",
@@ -993,7 +887,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-214",
     "title": "绘制金瓶梅知识图谱",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#214：绘制金瓶梅知识图谱），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "绘制金瓶梅知识图",
       "图表与信息图",
@@ -1014,7 +908,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-217",
     "title": "昏暗室内纯真少女的意外回眸",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#217：昏暗室内纯真少女的意外回眸），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "昏暗室内纯真少女",
       "品牌与空间",
@@ -1035,7 +929,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-221",
     "title": "窗边日系胶片女孩",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#221：窗边日系胶片女孩），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "窗边日系胶片女孩",
       "插画",
@@ -1053,31 +947,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-223",
-    "title": "春日禅意水墨群山海报",
-    "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#223：春日禅意水墨群山海报），已完成中文标准化转写与格式化。",
-    "tags": [
-      "春日禅意水墨群山",
-      "海报与排版",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-223",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case223.jpg",
-    "imageAlt": "春日禅意水墨群山海报示例图",
-    "prompt": "新中式水墨山水海报，竖版9:16构图，东方极简美学风格，\n大面积留白，整体色调为春日清晨氛围（青绿色、雾蓝、淡灰、浅墨），低饱和、清透柔和，高级质感。\n画面主体为奇峻巍峨的群山，从中间平静湖面的两侧拔地而起，占据左右两侧画面，\n山体以水墨晕染表现，浓淡干湿变化丰富，局部融入淡青绿色渲染，体现春意生机。\n山峰被湿润轻柔的晨雾包裹，雾气层层递进，与浅青蓝天空自然融合，形成空气透视与空间纵深。\n\n湖面如镜面般平静，呈现微青绿色调，倒映山体与天空，反射略带柔焦与雾化扩散效果，增强春日湿润与梦幻氛围。\n中景一艘带弧形篷顶的小木舟缓慢漂浮，船桨轻触水面形成细腻涟漪，水纹自然扩散，整体保持极静状态。\n\n船上为一位红衣渔女，体量较小（远景比例），人物简化处理为水墨剪影 + 轻微设色，\n身着低饱和朱砂红传统服饰（非鲜艳红），颜色略被雾气柔化，\n人物面部不刻画细节，仅保留轮廓与姿态（如轻扶船篷或执桨），\n红色在水面形成淡淡倒影，作为画面唯一暖色视觉焦点。\n\n岸边点缀疏林与春季新生植被，采用淡墨 + 淡青绿点染，虚实结合，增强节奏与生命气息。\n\n少量飞鸟在远空掠过，轻盈疏散分布，增强空间层次与灵动感。\n\n画面顶部居中竖排书法：“东方美学”，采用传统手写行书或行草风格（王羲之笔意），\n笔触自然起伏、提按分明，带飞白与墨韵扩散效果，避免字体感。\n书法颜色为深墨青或柔和墨黑，与整体画面统一。\n整体风格：水墨 + 现代极简设计融合，春日禅意、空灵湿润、宁静氛围，\n冷暖对比克制，电影感光影，高级艺术海报质感，8K超清细节。",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-224",
     "title": "机甲少女立于废弃海城",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#224：机甲少女立于废弃海城），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "机甲少女立于废弃",
       "插画",
@@ -1095,52 +968,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-225",
-    "title": "大师级真迹复刻",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#225：大师级真迹复刻），已完成中文标准化转写与格式化。",
-    "tags": [
-      "大师级真迹复刻",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-225",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case225.jpg",
-    "imageAlt": "大师级真迹复刻示例图",
-    "prompt": "帮我生成xxxx真迹图片",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
-    "id": "freestyle-case-239",
-    "title": "刘亦菲抖音直播畅聊中",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#239：刘亦菲抖音直播畅聊中），已完成中文标准化转写与格式化。",
-    "tags": [
-      "刘亦菲抖音直播畅",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-239",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case239.jpg",
-    "imageAlt": "刘亦菲抖音直播畅聊中示例图",
-    "prompt": "9:16 的图片比例，生成一张抖音直播的截图，里面是 刘亦菲 在直播，刘亦菲 手里拿着牌子，牌子里写着 今晚直播，欢迎来参亦菲畅聊！",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-240",
     "title": "胶片闪光灯下的球场少女",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#240：胶片闪光灯下的球场少女），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "胶片闪光灯下的球",
       "插画",
@@ -1161,7 +992,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-242",
     "title": "绝美国风工笔画书签设计",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#242：绝美国风工笔画书签设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "绝美国风工笔画书",
       "插画",
@@ -1182,7 +1013,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-243",
     "title": "定制专属风格界面设计系统",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#243：定制专属风格界面设计系统），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "定制专属风格界面",
       "UI 与界面",
@@ -1203,7 +1034,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-244",
     "title": "杜蕾斯茶颜悦色联名海报设计",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#244：杜蕾斯茶颜悦色联名海报设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "杜蕾斯茶颜悦色联",
       "海报与排版",
@@ -1224,7 +1055,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-245",
     "title": "马斯克专属篆刻印章设计",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#245：马斯克专属篆刻印章设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "马斯克专属篆刻印",
       "插画",
@@ -1245,7 +1076,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-246",
     "title": "黑白线稿勾勒的上海风情",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#246：黑白线稿勾勒的上海风情），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑白线稿勾勒的上",
       "插画",
@@ -1266,7 +1097,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-247",
     "title": "运动健身图标字体设计",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#247：运动健身图标字体设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "运动健身图标字体",
       "海报与排版",
@@ -1287,7 +1118,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-250",
     "title": "小王子与星舰的浪漫联名",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#250：小王子与星舰的浪漫联名），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "小王子与星舰的浪",
       "插画",
@@ -1308,7 +1139,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-251",
     "title": "言叶之庭春雨绿意单日历",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#251：言叶之庭春雨绿意单日历），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "言叶之庭春雨绿意",
       "插画",
@@ -1329,7 +1160,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-252",
     "title": "五一劳动节手举牌创意设计集",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#252：五一劳动节手举牌创意设计集），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "五一劳动节手举牌",
       "插画",
@@ -1350,7 +1181,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-253",
     "title": "2026谷雨节气唯美海报设计",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#253：2026谷雨节气唯美海报设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "2026谷雨节气",
       "海报与排版",
@@ -1371,7 +1202,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-254",
     "title": "奔赴山海胶片感海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#254：奔赴山海胶片感海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "奔赴山海胶片感海",
       "海报与排版",
@@ -1389,52 +1220,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-258",
-    "title": "快手直播离婚预告手机截图",
-    "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#258：快手直播离婚预告手机截图），已完成中文标准化转写与格式化。",
-    "tags": [
-      "快手直播离婚预告",
-      "UI 与界面",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-258",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case258.jpg",
-    "imageAlt": "快手直播离婚预告手机截图示例图",
-    "prompt": "生成快手内容截图：主题：直播离婚预告，iPhone尺寸",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
-    "id": "freestyle-case-259",
-    "title": "精致女孩背后的网贷真相",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#259：精致女孩背后的网贷真相），已完成中文标准化转写与格式化。",
-    "tags": [
-      "精致女孩背后的网",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-259",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case259.jpg",
-    "imageAlt": "精致女孩背后的网贷真相示例图",
-    "prompt": "生成小红书内容截图，主题：精致女孩背后都有网贷，iPhone尺寸",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-261",
     "title": "智能视频生成器暗黑界面设计",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#261：智能视频生成器暗黑界面设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "智能视频生成器暗",
       "UI 与界面",
@@ -1455,7 +1244,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-262",
     "title": "苹果园远观库克发布新机",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#262：苹果园远观库克发布新机），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "苹果园远观库克发",
       "插画",
@@ -1476,7 +1265,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-263",
     "title": "唯美二次元角色介绍网页",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#263：唯美二次元角色介绍网页），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "唯美二次元角色介",
       "插画",
@@ -1497,7 +1286,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-267",
     "title": "宋朝文人的赛博朋友圈",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#267：宋朝文人的赛博朋友圈），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "宋朝文人的赛博朋",
       "UI 与界面",
@@ -1518,7 +1307,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-268",
     "title": "威化岛回军前夕李成桂动态",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#268：威化岛回军前夕李成桂动态），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "威化岛回军前夕李",
       "插画",
@@ -1536,31 +1325,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-269",
-    "title": "拒绝盲目催婚的暖心视频号截图",
-    "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#269：拒绝盲目催婚的暖心视频号截图），已完成中文标准化转写与格式化。",
-    "tags": [
-      "拒绝盲目催婚的暖",
-      "UI 与界面",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-269",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case269.jpg",
-    "imageAlt": "拒绝盲目催婚的暖心视频号截图示例图",
-    "prompt": "生成视频号内容截图，主题：中老年不要盲目催婚，iPhone尺寸",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-272",
     "title": "日式温泉旅馆人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#272：日式温泉旅馆人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "日式温泉旅馆人像",
       "人物写真",
@@ -1581,7 +1349,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-276",
     "title": "红绸幻化壮阔国潮羊城",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#276：红绸幻化壮阔国潮羊城），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "红绸幻化壮阔国潮",
       "插画",
@@ -1602,7 +1370,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-277",
     "title": "奢华魅力黑人女性海滨摄影",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#277：奢华魅力黑人女性海滨摄影），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "奢华魅力黑人女性",
       "人物写真",
@@ -1623,7 +1391,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-278",
     "title": "阿马尔菲海岸复古旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#278：阿马尔菲海岸复古旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "阿马尔菲海岸复古",
       "海报与排版",
@@ -1641,31 +1409,10 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     ]
   },
   {
-    "id": "freestyle-case-279",
-    "title": "裂痕里的水墨东方山水画卷",
-    "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#279：裂痕里的水墨东方山水画卷），已完成中文标准化转写与格式化。",
-    "tags": [
-      "裂痕里的水墨东方",
-      "插画",
-      "精选案例"
-    ],
-    "source": "freestylefly/awesome-gpt-image-2 社区案例",
-    "sourceUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery.md#case-279",
-    "recommendedSize": "4:5 / 1:1",
-    "imageUrl": "https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/data/images/case279.jpg",
-    "imageAlt": "裂痕里的水墨东方山水画卷示例图",
-    "prompt": "极简新中式美学风格，画面以淡雅的灰白色为底，呈现出一种纸艺剪影般的立体感。\n一条S形蜿蜒的裂痕状边缘将画面分割，仿佛撕开了一层纸面，露出内部色彩斑斓的东方山水景象。\n裂口内，一条蜿蜒的河流自上而下贯穿整个构图，河水以深浅不一的蓝色渲染，层次分明，仿佛流动的丝带。\n河岸两侧点缀着青翠的山丘与梯田，色彩柔和，绿红交织，展现出田园的宁静之美。\n沿河而建的古风建筑错落有致，飞檐翘角，白墙黛瓦，在光影的映衬下更显古朴典雅。\n岸边树木葱茏，枝叶轻盈，一艘小船静泊于水中央，增添了几分悠然意境。\n整体构图呈S形曲线，富有韵律感，仿佛自然与人文的和谐共生。\n画作边缘采用撕纸效果，营造出立体浮雕般的视觉体验。\n下方题字\"东方美学\"以黑色楷体书写，日期\"2026/04/18\"与红色印章相呼应，底部\"CHINA\"字样庄重醒目，署名\"@LIYUE\"低调收尾，整体氛围静谧深远，充满诗意与哲思。",
-    "tips": [
-      "可替换提示词中的中括号 [变量] 部分以适配不同业务场景。",
-      "若画面包含文字排版，建议明确指定标题与文案层级。"
-    ]
-  },
-  {
     "id": "freestyle-case-281",
     "title": "赛博朋克科幻曼荼罗",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#281：赛博朋克科幻曼荼罗），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "赛博朋克科幻曼荼",
       "插画",
@@ -1686,7 +1433,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-282",
     "title": "温柔治愈系二次元手机截图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#282：温柔治愈系二次元手机截图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "温柔治愈系二次元",
       "UI 与界面",
@@ -1707,7 +1454,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-283",
     "title": "小恶魔莉莉香超任游戏海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#283：小恶魔莉莉香超任游戏海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "小恶魔莉莉香超任",
       "海报与排版",
@@ -1728,7 +1475,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-284",
     "title": "温馨卧室里的少女自拍",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#284：温馨卧室里的少女自拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "温馨卧室里的少女",
       "人物写真",
@@ -1749,7 +1496,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-285",
     "title": "真实动漫画面快照",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#285：真实动漫画面快照），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "真实动漫画面快照",
       "插画",
@@ -1770,7 +1517,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-287",
     "title": "不知火舞的小红书主页",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#287：不知火舞的小红书主页），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "不知火舞的小红书",
       "UI 与界面",
@@ -1791,7 +1538,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-290",
     "title": "古风诗人镭射典藏卡牌",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#290：古风诗人镭射典藏卡牌），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "古风诗人镭射典藏",
       "插画",
@@ -1812,7 +1559,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-291",
     "title": "极致奢华的弹珠店梦幻宣传单",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#291：极致奢华的弹珠店梦幻宣传单），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "极致奢华的弹珠店",
       "插画",
@@ -1833,7 +1580,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-296",
     "title": "博物馆级中文拆解信息图鉴",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#296：博物馆级中文拆解信息图鉴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "博物馆级中文拆解",
       "图表与信息图",
@@ -1854,7 +1601,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-298",
     "title": "梦幻波士顿春季城市海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#298：梦幻波士顿春季城市海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "梦幻波士顿春季城",
       "海报与排版",
@@ -1875,7 +1622,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-300",
     "title": "黑板上的出师表全文",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#300：黑板上的出师表全文），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑板上的出师表全",
       "插画",
@@ -1896,7 +1643,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-301",
     "title": "终结者机器人淘宝详情页",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#301：终结者机器人淘宝详情页），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "终结者机器人淘宝",
       "插画",
@@ -1917,7 +1664,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-305",
     "title": "深夜便利店里的性感霓虹少女",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#305：深夜便利店里的性感霓虹少女），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "深夜便利店里的性",
       "插画",
@@ -1938,7 +1685,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-306",
     "title": "官方角色设定资料卡",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#306：官方角色设定资料卡），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "官方角色设定资料",
       "插画",
@@ -1959,7 +1706,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-321",
     "title": "都市落日时尚大片",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#321：都市落日时尚大片），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "都市落日时尚大片",
       "插画",
@@ -1980,7 +1727,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-326",
     "title": "红蓝撞色高跟诱惑",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#326：红蓝撞色高跟诱惑），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "红蓝撞色高跟诱惑",
       "插画",
@@ -2001,7 +1748,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-332",
     "title": "茶π产品宣传海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#332：茶π产品宣传海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "茶π产品宣传海报",
       "海报与排版",
@@ -2022,7 +1769,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-333",
     "title": "AI 眼镜爆炸拆解图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#333：AI 眼镜爆炸拆解图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "AI 眼镜爆炸拆",
       "插画",
@@ -2043,7 +1790,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-335",
     "title": "朋友圈截图生成",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#335：朋友圈截图生成），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "朋友圈截图生成",
       "UI 与界面",
@@ -2064,7 +1811,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-336",
     "title": "个人网页视觉设计",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#336：个人网页视觉设计），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "个人网页视觉设计",
       "插画",
@@ -2085,7 +1832,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-337",
     "title": "《短歌行》诗词意境图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#337：《短歌行》诗词意境图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "《短歌行》诗词意",
       "插画",
@@ -2106,7 +1853,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-338",
     "title": "《赤壁怀古》长卷图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#338：《赤壁怀古》长卷图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "《赤壁怀古》长卷",
       "插画",
@@ -2127,7 +1874,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-340",
     "title": "彼岸花丛中的红妆女子",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#340：彼岸花丛中的红妆女子），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "彼岸花丛中的红妆",
       "插画",
@@ -2148,7 +1895,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-342",
     "title": "四季包装 Campaign 宫格",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#342：四季包装 Campaign 宫格），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "四季包装 Cam",
       "商品与电商",
@@ -2169,7 +1916,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-343",
     "title": "高定时尚杂志封面",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#343：高定时尚杂志封面），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "高定时尚杂志封面",
       "插画",
@@ -2190,7 +1937,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-344",
     "title": "NOIR 街头服饰 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#344：NOIR 街头服饰 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "NOIR 街头服",
       "插画",
@@ -2211,7 +1958,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-347",
     "title": "4×4 动作分解参考表",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#347：4×4 动作分解参考表），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "4×4 动作分解",
       "插画",
@@ -2232,7 +1979,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-348",
     "title": "胡须风格分析海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#348：胡须风格分析海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "胡须风格分析海报",
       "海报与排版",
@@ -2253,7 +2000,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-349",
     "title": "运动时尚三联 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#349：运动时尚三联 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "运动时尚三联 C",
       "插画",
@@ -2274,7 +2021,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-351",
     "title": "健身品牌力量 Campaign",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#351：健身品牌力量 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "健身品牌力量 C",
       "品牌与空间",
@@ -2295,7 +2042,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-352",
     "title": "西楚霸王国风暗黑海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#352：西楚霸王国风暗黑海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "西楚霸王国风暗黑",
       "海报与排版",
@@ -2316,7 +2063,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-356",
     "title": "过度思考超现实街头 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#356：过度思考超现实街头 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "过度思考超现实街",
       "插画",
@@ -2337,7 +2084,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-361",
     "title": "手机爆炸拆解图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#361：手机爆炸拆解图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "手机爆炸拆解图",
       "UI 与界面",
@@ -2358,7 +2105,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-363",
     "title": "磁场铁粉 Logo 物理成像",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#363：磁场铁粉 Logo 物理成像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "磁场铁粉 Log",
       "品牌与空间",
@@ -2379,7 +2126,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-364",
     "title": "奢华个人色彩档案信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#364：奢华个人色彩档案信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "奢华个人色彩档案",
       "图表与信息图",
@@ -2400,7 +2147,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-366",
     "title": "咖啡馆写实照片与 2D 涂鸦叠加",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#366：咖啡馆写实照片与 2D 涂鸦叠加），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "咖啡馆写实照片与",
       "商品与电商",
@@ -2421,7 +2168,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-367",
     "title": "VELORA 奢华香水广告海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#367：VELORA 奢华香水广告海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "VELORA 奢",
       "海报与排版",
@@ -2442,7 +2189,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-368",
     "title": "印度餐厅菜单改造宣传图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#368：印度餐厅菜单改造宣传图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "印度餐厅菜单改造",
       "插画",
@@ -2463,7 +2210,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-369",
     "title": "明洞旅游区域地图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#369：明洞旅游区域地图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "明洞旅游区域地图",
       "图表与信息图",
@@ -2484,7 +2231,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-371",
     "title": "Scrapbook 真人图与迷你分身",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#371：Scrapbook 真人图与迷你分身），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Scrapboo",
       "插画",
@@ -2505,7 +2252,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-372",
     "title": "可爱角色设定表",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#372：可爱角色设定表），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "可爱角色设定表",
       "插画",
@@ -2526,7 +2273,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-374",
     "title": "彩色潦草小狗线条风格重绘",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#374：彩色潦草小狗线条风格重绘），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "彩色潦草小狗线条",
       "插画",
@@ -2547,7 +2294,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-378",
     "title": "高端 3D 收藏玩具头像",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#378：高端 3D 收藏玩具头像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "高端 3D 收藏",
       "插画",
@@ -2568,7 +2315,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-379",
     "title": "品牌人格漫画信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#379：品牌人格漫画信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌人格漫画信息",
       "图表与信息图",
@@ -2589,7 +2336,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-380",
     "title": "冠状病毒尺度缩放科学信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#380：冠状病毒尺度缩放科学信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "冠状病毒尺度缩放",
       "图表与信息图",
@@ -2610,7 +2357,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-381",
     "title": "90 年代公寓场景参考板",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#381：90 年代公寓场景参考板），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "90 年代公寓场",
       "插画",
@@ -2631,7 +2378,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-382",
     "title": "春日花田三联竖版写真拼贴",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#382：春日花田三联竖版写真拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "春日花田三联竖版",
       "人物写真",
@@ -2652,7 +2399,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-383",
     "title": "AI 日常生活 iPhone 抓拍",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#383：AI 日常生活 iPhone 抓拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "AI 日常生活 ",
       "插画",
@@ -2673,7 +2420,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-384",
     "title": "十国传统服饰时尚拼贴",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#384：十国传统服饰时尚拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "十国传统服饰时尚",
       "插画",
@@ -2694,7 +2441,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-385",
     "title": "青岛啤酒灵感女装系列",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#385：青岛啤酒灵感女装系列），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "青岛啤酒灵感女装",
       "商品与电商",
@@ -2715,7 +2462,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-386",
     "title": "品牌包络产品广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#386：品牌包络产品广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌包络产品广告",
       "商品与电商",
@@ -2736,7 +2483,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-387",
     "title": "Netflix 首页主视觉 UI",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#387：Netflix 首页主视觉 UI），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Netflix ",
       "UI 与界面",
@@ -2757,7 +2504,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-388",
     "title": "1980s Claude 复古杂志广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#388：1980s Claude 复古杂志广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "1980s Cl",
       "商品与电商",
@@ -2778,7 +2525,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-389",
     "title": "Transparent Labs Hydrate 健身补剂 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#389：Transparent Labs Hydrate 健身补剂 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Transpar",
       "插画",
@@ -2799,7 +2546,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-390",
     "title": "羊毛毡国家微缩世界",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#390：羊毛毡国家微缩世界），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "羊毛毡国家微缩世",
       "插画",
@@ -2820,7 +2567,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-391",
     "title": "四国文化锚点服装设计宫格",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#391：四国文化锚点服装设计宫格），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "四国文化锚点服装",
       "插画",
@@ -2841,7 +2588,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-392",
     "title": "头发里的微型城市",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#392：头发里的微型城市），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "头发里的微型城市",
       "插画",
@@ -2862,7 +2609,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-393",
     "title": "Y2K 金色时刻人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#393：Y2K 金色时刻人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Y2K 金色时刻",
       "人物写真",
@@ -2883,7 +2630,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-394",
     "title": "中世纪村庄双精灵冒险者",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#394：中世纪村庄双精灵冒险者），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "中世纪村庄双精灵",
       "插画",
@@ -2904,7 +2651,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-395",
     "title": "骑士法师大战石像魔像",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#395：骑士法师大战石像魔像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "骑士法师大战石像",
       "插画",
@@ -2925,7 +2672,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-396",
     "title": "龙类物种复古百科海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#396：龙类物种复古百科海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "龙类物种复古百科",
       "海报与排版",
@@ -2946,7 +2693,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-397",
     "title": "街舞角色设定参考图",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#397：街舞角色设定参考图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "街舞角色设定参考",
       "插画",
@@ -2967,7 +2714,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-398",
     "title": "8 套日常穿搭编辑拼贴",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#398：8 套日常穿搭编辑拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "8 套日常穿搭编",
       "插画",
@@ -2988,7 +2735,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-399",
     "title": "唱片公司楼梯间写真人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#399：唱片公司楼梯间写真人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "唱片公司楼梯间写",
       "人物写真",
@@ -3009,7 +2756,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-400",
     "title": "多风格签名选择海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#400：多风格签名选择海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "多风格签名选择海",
       "海报与排版",
@@ -3030,7 +2777,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-401",
     "title": "Lost in 国家旅行海报拼贴",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#401：Lost in 国家旅行海报拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Lost in ",
       "海报与排版",
@@ -3051,7 +2798,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-402",
     "title": "3D 小红书个人资料卡",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#402：3D 小红书个人资料卡），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "3D 小红书个人",
       "UI 与界面",
@@ -3072,7 +2819,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-403",
     "title": "小红书数字破屏 3D 女孩",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#403：小红书数字破屏 3D 女孩），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "小红书数字破屏 ",
       "UI 与界面",
@@ -3093,7 +2840,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-404",
     "title": "豪华社媒破屏商业广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#404：豪华社媒破屏商业广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "豪华社媒破屏商业",
       "商品与电商",
@@ -3114,7 +2861,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-405",
     "title": "可爱纸艺风照片重绘",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#405：可爱纸艺风照片重绘），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "可爱纸艺风照片重",
       "插画",
@@ -3135,7 +2882,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-406",
     "title": "巨型游戏手柄街头 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#406：巨型游戏手柄街头 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "巨型游戏手柄街头",
       "插画",
@@ -3156,7 +2903,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-407",
     "title": "Neuro-AI 混合系统信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#407：Neuro-AI 混合系统信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Neuro-AI",
       "图表与信息图",
@@ -3177,7 +2924,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-408",
     "title": "Cozy Academia 学习手记",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#408：Cozy Academia 学习手记），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Cozy Aca",
       "插画",
@@ -3198,7 +2945,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-409",
     "title": "拙劣 MS Paint 风重绘",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#409：拙劣 MS Paint 风重绘），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "拙劣 MS Pa",
       "插画",
@@ -3219,7 +2966,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-410",
     "title": "夸张动漫风主体重绘",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#410：夸张动漫风主体重绘），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "夸张动漫风主体重",
       "插画",
@@ -3240,7 +2987,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-411",
     "title": "极简建筑地标海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#411：极简建筑地标海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "极简建筑地标海报",
       "海报与排版",
@@ -3261,7 +3008,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-412",
     "title": "彩色按钮时尚 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#412：彩色按钮时尚 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "彩色按钮时尚 C",
       "插画",
@@ -3282,7 +3029,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-413",
     "title": "当代舞现场 Storyboard",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#413：当代舞现场 Storyboard），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "当代舞现场 St",
       "插画",
@@ -3303,7 +3050,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-414",
     "title": "室内晨间写实摄影",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#414：室内晨间写实摄影），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "室内晨间写实摄影",
       "人物写真",
@@ -3324,7 +3071,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-415",
     "title": "东方神话人物志百科海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#415：东方神话人物志百科海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "东方神话人物志百",
       "海报与排版",
@@ -3345,7 +3092,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-416",
     "title": "Earth Signs 角色 Scrapbook",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#416：Earth Signs 角色 Scrapbook），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Earth Si",
       "插画",
@@ -3366,7 +3113,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-417",
     "title": "复古印尼猫薄荷广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#417：复古印尼猫薄荷广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "复古印尼猫薄荷广",
       "商品与电商",
@@ -3387,7 +3134,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-418",
     "title": "中世纪城市旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#418：中世纪城市旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "中世纪城市旅行海",
       "海报与排版",
@@ -3408,7 +3155,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-419",
     "title": "可颂烘焙流程 Storyboard",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#419：可颂烘焙流程 Storyboard），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "可颂烘焙流程 S",
       "插画",
@@ -3429,7 +3176,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-420",
     "title": "红跑道低角度夏日人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#420：红跑道低角度夏日人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "红跑道低角度夏日",
       "人物写真",
@@ -3450,7 +3197,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-421",
     "title": "iPhone 屏幕遮脸创意人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#421：iPhone 屏幕遮脸创意人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "iPhone 屏",
       "人物写真",
@@ -3471,7 +3218,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-422",
     "title": "冬季生存惊悚 Storyboard",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#422：冬季生存惊悚 Storyboard），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "冬季生存惊悚 S",
       "插画",
@@ -3492,7 +3239,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-423",
     "title": "日系手绘涂鸦半身插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#423：日系手绘涂鸦半身插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "日系手绘涂鸦半身",
       "插画",
@@ -3513,7 +3260,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-424",
     "title": "FMCG 棒棒糖霓虹广告",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#424：FMCG 棒棒糖霓虹广告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "FMCG 棒棒糖",
       "商品与电商",
@@ -3534,7 +3281,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-425",
     "title": "黑白时尚人像拼贴海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#425：黑白时尚人像拼贴海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑白时尚人像拼贴",
       "海报与排版",
@@ -3555,7 +3302,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-426",
     "title": "日韩咖啡馆情侣写真",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#426：日韩咖啡馆情侣写真），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "日韩咖啡馆情侣写",
       "人物写真",
@@ -3576,7 +3323,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-427",
     "title": "9-frame 时尚人像拼贴",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#427：9-frame 时尚人像拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "9-frame ",
       "人物写真",
@@ -3597,7 +3344,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-428",
     "title": "F1 直播转播围场截图",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#428：F1 直播转播围场截图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "F1 直播转播围",
       "UI 与界面",
@@ -3618,7 +3365,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-429",
     "title": "韩国便利店粉色 Hoodie 人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#429：韩国便利店粉色 Hoodie 人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "韩国便利店粉色 ",
       "人物写真",
@@ -3639,7 +3386,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-430",
     "title": "铅笔素描时尚编辑插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#430：铅笔素描时尚编辑插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "铅笔素描时尚编辑",
       "插画",
@@ -3660,7 +3407,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-431",
     "title": "城市文字旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#431：城市文字旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "城市文字旅行海报",
       "海报与排版",
@@ -3681,7 +3428,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-432",
     "title": "大堡礁复古旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#432：大堡礁复古旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "大堡礁复古旅行海",
       "海报与排版",
@@ -3702,7 +3449,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-433",
     "title": "韩国城市水彩旅行插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#433：韩国城市水彩旅行插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "韩国城市水彩旅行",
       "插画",
@@ -3723,7 +3470,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-434",
     "title": "东京街头胶片人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#434：东京街头胶片人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "东京街头胶片人像",
       "人物写真",
@@ -3744,7 +3491,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-435",
     "title": "层叠纸雕情侣插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#435：层叠纸雕情侣插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "层叠纸雕情侣插画",
       "插画",
@@ -3765,7 +3512,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-436",
     "title": "数码相机屏幕怀旧人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#436：数码相机屏幕怀旧人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "数码相机屏幕怀旧",
       "人物写真",
@@ -3786,7 +3533,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-437",
     "title": "面部美学分析报告",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#437：面部美学分析报告），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "面部美学分析报告",
       "图表与信息图",
@@ -3807,7 +3554,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-438",
     "title": "珠宝微缩城市广告海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#438：珠宝微缩城市广告海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "珠宝微缩城市广告",
       "海报与排版",
@@ -3828,7 +3575,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-439",
     "title": "赛博黑客角色设定表",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#439：赛博黑客角色设定表），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "赛博黑客角色设定",
       "插画",
@@ -3849,7 +3596,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-440",
     "title": "手机拍摄 FaceTime 工作屏幕",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#440：手机拍摄 FaceTime 工作屏幕），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "手机拍摄 Fac",
       "UI 与界面",
@@ -3870,7 +3617,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-441",
     "title": "WILDCAMP 巨型帐篷广告海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#441：WILDCAMP 巨型帐篷广告海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "WILDCAMP",
       "海报与排版",
@@ -3891,7 +3638,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-442",
     "title": "舒适发廊插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#442：舒适发廊插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "舒适发廊插画",
       "插画",
@@ -3912,7 +3659,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-443",
     "title": "塔可爆炸拆解信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#443：塔可爆炸拆解信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "塔可爆炸拆解信息",
       "图表与信息图",
@@ -3933,7 +3680,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-444",
     "title": "迪斯科镜面 3D App 图标",
     "category": "UI 与界面",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#444：迪斯科镜面 3D App 图标），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "迪斯科镜面 3D",
       "UI 与界面",
@@ -3954,7 +3701,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-445",
     "title": "旅游照水墨明信片",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#445：旅游照水墨明信片），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "旅游照水墨明信片",
       "插画",
@@ -3975,7 +3722,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-446",
     "title": "低多边形纸艺男士肖像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#446：低多边形纸艺男士肖像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "低多边形纸艺男士",
       "人物写真",
@@ -3996,7 +3743,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-447",
     "title": "现代地铁工程信息图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#447：现代地铁工程信息图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "现代地铁工程信息",
       "图表与信息图",
@@ -4017,7 +3764,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-448",
     "title": "1942 空战街机电影城",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#448：1942 空战街机电影城），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "1942 空战街",
       "插画",
@@ -4038,7 +3785,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-449",
     "title": "奢华机械腕表技术图鉴",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#449：奢华机械腕表技术图鉴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "奢华机械腕表技术",
       "插画",
@@ -4059,7 +3806,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-450",
     "title": "烛光侧室写实摄影",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#450：烛光侧室写实摄影），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "烛光侧室写实摄影",
       "人物写真",
@@ -4080,7 +3827,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-451",
     "title": "韩国海滩日落时尚人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#451：韩国海滩日落时尚人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "韩国海滩日落时尚",
       "人物写真",
@@ -4101,7 +3848,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-452",
     "title": "极简童话手绘儿童插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#452：极简童话手绘儿童插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "极简童话手绘儿童",
       "插画",
@@ -4122,7 +3869,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-453",
     "title": "企业级商用画册视觉系统",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#453：企业级商用画册视觉系统），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "企业级商用画册视",
       "插画",
@@ -4143,7 +3890,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-454",
     "title": "旅行美食薯片广告海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#454：旅行美食薯片广告海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "旅行美食薯片广告",
       "海报与排版",
@@ -4164,7 +3911,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-455",
     "title": "巨型舒适洞洞鞋 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#455：巨型舒适洞洞鞋 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "巨型舒适洞洞鞋 ",
       "插画",
@@ -4185,7 +3932,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-456",
     "title": "历史事件 2x2 可视化地图",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#456：历史事件 2x2 可视化地图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "历史事件 2x2",
       "图表与信息图",
@@ -4206,7 +3953,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-457",
     "title": "运动轨迹舞者光绘海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#457：运动轨迹舞者光绘海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "运动轨迹舞者光绘",
       "海报与排版",
@@ -4227,7 +3974,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-458",
     "title": "巴黎秋季时装插画",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#458：巴黎秋季时装插画），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "巴黎秋季时装插画",
       "插画",
@@ -4248,7 +3995,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-459",
     "title": "品牌奶茶 KV 概念海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#459：品牌奶茶 KV 概念海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "品牌奶茶 KV ",
       "海报与排版",
@@ -4269,7 +4016,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-460",
     "title": "棋盘低角度奢华男装 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#460：棋盘低角度奢华男装 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "棋盘低角度奢华男",
       "插画",
@@ -4290,7 +4037,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-461",
     "title": "家庭旅行纸雕拼贴",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#461：家庭旅行纸雕拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "家庭旅行纸雕拼贴",
       "插画",
@@ -4311,7 +4058,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-462",
     "title": "复古日系迷你橡皮商品包装",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#462：复古日系迷你橡皮商品包装），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "复古日系迷你橡皮",
       "商品与电商",
@@ -4332,7 +4079,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-463",
     "title": "黑色吊带袜单款图鉴展示",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#463：黑色吊带袜单款图鉴展示），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑色吊带袜单款图",
       "插画",
@@ -4353,7 +4100,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-464",
     "title": "高雄水彩拼贴旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#464：高雄水彩拼贴旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "高雄水彩拼贴旅行",
       "海报与排版",
@@ -4374,7 +4121,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-465",
     "title": "逆光美背女性情绪写真",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#465：逆光美背女性情绪写真），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "逆光美背女性情绪",
       "人物写真",
@@ -4395,7 +4142,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-466",
     "title": "鱼市追猫 CCD 街拍",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#466：鱼市追猫 CCD 街拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "鱼市追猫 CCD",
       "插画",
@@ -4416,7 +4163,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-467",
     "title": "泳装杂志九宫格广告页",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#467：泳装杂志九宫格广告页），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "泳装杂志九宫格广",
       "商品与电商",
@@ -4437,7 +4184,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-468",
     "title": "霓虹涂鸦展会自拍",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#468：霓虹涂鸦展会自拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "霓虹涂鸦展会自拍",
       "人物写真",
@@ -4458,7 +4205,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-469",
     "title": "导览式科普绘本",
     "category": "图表与信息图",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#469：导览式科普绘本），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "导览式科普绘本",
       "图表与信息图",
@@ -4479,7 +4226,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-470",
     "title": "本地生活小店异形展架",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#470：本地生活小店异形展架），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "本地生活小店异形",
       "插画",
@@ -4500,7 +4247,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-471",
     "title": "花簪和服动漫肖像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#471：花簪和服动漫肖像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "花簪和服动漫肖像",
       "人物写真",
@@ -4521,7 +4268,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-472",
     "title": "上海地铁站台晨光",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#472：上海地铁站台晨光），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "上海地铁站台晨光",
       "插画",
@@ -4542,7 +4289,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-473",
     "title": "ROGUE VIPER 游戏概念设定板",
     "category": "品牌与空间",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#473：ROGUE VIPER 游戏概念设定板），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "ROGUE VI",
       "品牌与空间",
@@ -4563,7 +4310,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-474",
     "title": "四城极简旅行海报系列",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#474：四城极简旅行海报系列），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "四城极简旅行海报",
       "海报与排版",
@@ -4584,7 +4331,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-475",
     "title": "企鹅造型包装结构板",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#475：企鹅造型包装结构板），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "企鹅造型包装结构",
       "商品与电商",
@@ -4605,7 +4352,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-476",
     "title": "早安拿铁微缩女孩",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#476：早安拿铁微缩女孩），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "早安拿铁微缩女孩",
       "插画",
@@ -4626,7 +4373,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-477",
     "title": "Instagram 餐桌俯拍创意",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#477：Instagram 餐桌俯拍创意），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Instagra",
       "插画",
@@ -4647,7 +4394,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-478",
     "title": "夹层式品牌编辑海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#478：夹层式品牌编辑海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "夹层式品牌编辑海",
       "海报与排版",
@@ -4668,7 +4415,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-479",
     "title": "杂志纸艺拼贴重绘",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#479：杂志纸艺拼贴重绘），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "杂志纸艺拼贴重绘",
       "插画",
@@ -4689,7 +4436,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-480",
     "title": "粉丝速写本角色页",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#480：粉丝速写本角色页），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "粉丝速写本角色页",
       "插画",
@@ -4710,7 +4457,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-481",
     "title": "韩系春日 scrapbook 海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#481：韩系春日 scrapbook 海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "韩系春日 scr",
       "海报与排版",
@@ -4731,7 +4478,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-482",
     "title": "自我凝视超现实 Campaign",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#482：自我凝视超现实 Campaign），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "自我凝视超现实 ",
       "插画",
@@ -4752,7 +4499,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-483",
     "title": "都市飞鸟街头肖像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#483：都市飞鸟街头肖像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "都市飞鸟街头肖像",
       "人物写真",
@@ -4773,7 +4520,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-484",
     "title": "霓虹涂鸦黑白人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#484：霓虹涂鸦黑白人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "霓虹涂鸦黑白人像",
       "人物写真",
@@ -4794,7 +4541,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-485",
     "title": "时尚目录电商拼贴",
     "category": "商品与电商",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#485：时尚目录电商拼贴），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "时尚目录电商拼贴",
       "商品与电商",
@@ -4815,7 +4562,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-486",
     "title": "RCB 冠军混合媒介海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#486：RCB 冠军混合媒介海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "RCB 冠军混合",
       "海报与排版",
@@ -4836,7 +4583,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-487",
     "title": "法式药妆商业分镜封面",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#487：法式药妆商业分镜封面），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "法式药妆商业分镜",
       "插画",
@@ -4857,7 +4604,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-488",
     "title": "屋顶球场日落人像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#488：屋顶球场日落人像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "屋顶球场日落人像",
       "人物写真",
@@ -4878,7 +4625,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-489",
     "title": "城市地图微缩旅行海报",
     "category": "海报与排版",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#489：城市地图微缩旅行海报），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "城市地图微缩旅行",
       "海报与排版",
@@ -4899,7 +4646,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-490",
     "title": "双重曝光时尚肖像",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#490：双重曝光时尚肖像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "双重曝光时尚肖像",
       "人物写真",
@@ -4920,7 +4667,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-491",
     "title": "Y2K 高楼浴室镜面自拍",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#491：Y2K 高楼浴室镜面自拍），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Y2K 高楼浴室",
       "人物写真",
@@ -4941,7 +4688,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-492",
     "title": "黑色高定酒店套房写真",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#492：黑色高定酒店套房写真），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑色高定酒店套房",
       "人物写真",
@@ -4962,7 +4709,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-493",
     "title": "东京旅行 13 格视频封面",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#493：东京旅行 13 格视频封面），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "东京旅行 13 ",
       "插画",
@@ -4983,7 +4730,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-502",
     "title": "黑桃国王递归扑克牌",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#502：黑桃国王递归扑克牌），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "黑桃国王递归扑克",
       "插画",
@@ -5004,7 +4751,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-504",
     "title": "粗糙涂鸦人像改图",
     "category": "人物写真",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#504：粗糙涂鸦人像改图），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "粗糙涂鸦人像改图",
       "人物写真",
@@ -5025,7 +4772,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-512",
     "title": "Brutalist Freestyle 角色设定表",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#512：Brutalist Freestyle 角色设定表），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "Brutalis",
       "插画",
@@ -5046,7 +4793,7 @@ export const FREESTYLE_PROMPT_TEMPLATES: PromptTemplateInput[] = [
     "id": "freestyle-case-522",
     "title": "儿童故事书手绘头像",
     "category": "插画",
-    "description": "来自 freestylefly/awesome-gpt-image-2 社区案例（#522：儿童故事书手绘头像），已完成中文标准化转写与格式化。",
+    "description": "",
     "tags": [
       "儿童故事书手绘头",
       "插画",
