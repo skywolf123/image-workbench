@@ -20,7 +20,7 @@ import { getContentEditableCursor, getContentEditablePlainText, getContentEditab
 import { useHintTooltip } from '../hooks/useHintTooltip'
 import { downloadImageEntriesAsZip, downloadImageIds, formatExportFileTime, getTaskOutputImageZipEntries } from '../lib/downloadImages'
 import SizePickerModal from './SizePickerModal'
-import { CloseIcon, CollapseIcon, ExpandIcon, PlusIcon, SketchIcon } from './icons'
+import { CloseIcon, CollapseIcon, ExpandIcon, NewDocIcon, PlusIcon, SketchIcon } from './icons'
 import { CommentBadge } from './CommentMarks'
 import ButtonTooltip from './input/buttonTooltip'
 import DragUploadOverlay from './input/dragUploadOverlay'
@@ -1885,7 +1885,7 @@ export default function InputBar() {
                 aria-label="新建"
                 className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-300 dark:hover:bg-white/[0.1] text-gray-500 dark:text-gray-300 transition-all shadow-sm hover:shadow"
               >
-                <PlusIcon className="w-5 h-5" />
+                <NewDocIcon className="w-5 h-5" />
               </button>
             </div>
             <div className={`relative grid flex-1 sm:[contain:inline-size]${promptExpanded ? ' min-h-0' : ''}`}>
@@ -2090,7 +2090,7 @@ export default function InputBar() {
                     aria-label="新建"
                     className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-300 dark:hover:bg-white/[0.1] text-gray-500 dark:text-gray-300 transition-all shadow-sm flex-shrink-0"
                   >
-                    <PlusIcon className="w-5 h-5" />
+                    <NewDocIcon className="w-5 h-5" />
                   </button>
                 </div>
                 {renderAddImageButton(true)}

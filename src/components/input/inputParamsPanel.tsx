@@ -209,17 +209,6 @@ export default function InputParamsPanel({
 
   return (
     <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-2 min-w-0 text-xs">
-      {/* 极小的收缩权重：先截断“更多”的摘要，放不下时才压缩模型 ID */}
-      <div className="min-w-0 max-w-full sm:shrink-[0.01] max-sm:flex-auto">
-        <Select
-          value={activeProfile.model}
-          onChange={(val) => onModelChange(String(val))}
-          options={modelOptions}
-          showValueTooltips
-          menuClassName="min-w-max"
-          className={CHIP_CLASS}
-        />
-      </div>
       <div
         className="relative max-sm:flex-auto sm:shrink-0"
         onMouseEnter={sizeHint.show}
