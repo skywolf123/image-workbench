@@ -27,22 +27,68 @@ export function isTemplateSubjectReplaceable(template: Pick<PromptTemplate, 'tit
   return /商品|产品|样机|白底图|瓶身|包装|替换主体|模特|香水|护肤品|鞋子|包包|服装/i.test(text)
 }
 
+export interface TemplateSizeCandidate {
+  raw: string
+  ratioLabel: string
+  size: string
+}
+
 /**
- * 解析模板推荐的尺寸或比例为标准分辨率
+ * 从模板推荐尺寸文本中解析出所有有效的候选尺寸选项（例如 "4:5 / 1:1" 拆分为 4:5 和 1:1 对应的分辨率）
+ */
+export function parseTemplateSizeCandidates(recommendedSize: string, tier: SizeTier = '1K'): TemplateSizeCandidate[] {
+  const trimmed = recommendedSize.trim()
+  if (!trimmed || trimmed === 'auto') return []
+
+  const parts = trimmed.split(/[/,，、|]/).map((p) => p.trim()).filter(Boolean)
+  const results: TemplateSizeCandidate[] = []
+  const seenSizes = new Set<string>()
+
+  for (const part of parts) {
+    const match = part.match(/(\d+(?:\.\d+)?)\s*[:：xX×]\s*(\d+(?:\.\d+)?)/)
+    if (!match) continue
+
+    const w = Number(match[1])
+    const h = Number(match[2])
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) continue
+
+    let size = ''
+    let ratioLabel = ''
+
+    if (w >= 256 && h >= 256) {
+      size = normalizeImageSize(`${Math.round(w)}x${Math.round(h)}`)
+      ratioLabel = size
+    } else {
+      ratioLabel = `${w}:${h}`
+      const calculated = calculateImageSize(tier, ratioLabel)
+      if (calculated) {
+        size = calculated
+      } else {
+        const scale = 1024 / Math.max(w, h)
+        size = normalizeImageSize(`${Math.round(w * scale)}x${Math.round(h * scale)}`)
+      }
+    }
+
+    if (size && !seenSizes.has(size)) {
+      seenSizes.add(size)
+      results.push({
+        raw: part,
+        ratioLabel,
+        size,
+      })
+    }
+  }
+
+  return results
+}
+
+/**
+ * 解析模板推荐的尺寸或比例为标准分辨率（例如 1024x1024, 768x1024）
+ * 优先取首个有效推荐比例
  */
 export function resolveTemplateSize(recommendedSize: string, tier: SizeTier = '1K'): string | null {
-  const trimmed = recommendedSize.trim()
-  if (!trimmed || trimmed === 'auto') return null
-
-  if (/^\d+\s*[xX×]\s*\d+$/.test(trimmed)) {
-    return normalizeImageSize(trimmed)
-  }
-
-  if (parseRatio(trimmed)) {
-    return calculateImageSize(tier, trimmed)
-  }
-
-  return null
+  const candidates = parseTemplateSizeCandidates(recommendedSize, tier)
+  return candidates[0]?.size ?? null
 }
 
 /**

@@ -12,11 +12,12 @@ import {
 } from '../lib/promptTemplates'
 import {
   isTemplateSubjectReplaceable,
-  resolveTemplateSize,
+  parseTemplateSizeCandidates,
   composePromptWithImageReference,
 } from '../lib/promptTemplateReference'
 import { createInputImageFromFile } from '../store'
 import type { InputImage } from '../types'
+import { cacheImage } from '../lib/imageCache'
 import { copyTextToClipboard, getClipboardFailureMessage } from '../lib/clipboard'
 import { useStore } from '../store'
 import { useCloseOnEscape } from '../hooks/useCloseOnEscape'
@@ -199,7 +200,7 @@ function TemplateDetailPanel({
   template: PromptTemplate
   compact?: boolean
   workspaceImages?: InputImage[]
-  onApply: (template: PromptTemplate, referenceImage?: InputImage | null, syncSize?: boolean) => void
+  onApply: (template: PromptTemplate, referenceImage?: InputImage | null, targetSize?: string | null) => void
   onAppend: (template: PromptTemplate) => void
   onCopy: (template: PromptTemplate) => void
   onZoom: (template: PromptTemplate) => void
@@ -211,6 +212,17 @@ function TemplateDetailPanel({
   const [syncRecommendedSize, setSyncRecommendedSize] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const sizeCandidates = useMemo(
+    () => parseTemplateSizeCandidates(template.recommendedSize),
+    [template.recommendedSize],
+  )
+  const [selectedCandidateSize, setSelectedCandidateSize] = useState<string>(() => sizeCandidates[0]?.size ?? '')
+
+  useEffect(() => {
+    setReferenceImage(null)
+    setSelectedCandidateSize(sizeCandidates[0]?.size ?? '')
+  }, [template.id, sizeCandidates])
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -224,6 +236,8 @@ function TemplateDetailPanel({
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
+
+  const effectiveTargetSize = syncRecommendedSize && selectedCandidateSize ? selectedCandidateSize : null
 
   return (
     <div className={`flex min-h-full flex-col ${compact ? 'relative px-4 pb-4 pt-3' : 'p-4 sm:p-5'}`}>
@@ -365,21 +379,57 @@ function TemplateDetailPanel({
           </div>
         )}
 
-        <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-          <input
-            type="checkbox"
-            checked={syncRecommendedSize}
-            onChange={(e) => setSyncRecommendedSize(e.target.checked)}
-            className="rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700"
-          />
-          <span>自动切换为推荐比例 ({template.recommendedSize})</span>
-        </label>
       </div>
+
+      {/* 推荐尺寸同步选项 */}
+      {sizeCandidates.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 dark:border-white/[0.08] dark:bg-zinc-900/60">
+          <div className="flex items-center justify-between gap-2">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+              <input
+                type="checkbox"
+                checked={syncRecommendedSize}
+                onChange={(e) => setSyncRecommendedSize(e.target.checked)}
+                className="rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700"
+              />
+              <span>切换为推荐尺寸</span>
+            </label>
+            {effectiveTargetSize && (
+              <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                {effectiveTargetSize}
+              </span>
+            )}
+          </div>
+
+          {syncRecommendedSize && sizeCandidates.length > 1 && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-1 border-t border-zinc-200/60 dark:border-white/[0.06]">
+              <span className="text-[11px] text-zinc-400 dark:text-zinc-500">选择比例：</span>
+              {sizeCandidates.map((candidate) => {
+                const isSelected = selectedCandidateSize === candidate.size
+                return (
+                  <button
+                    key={candidate.size}
+                    type="button"
+                    onClick={() => setSelectedCandidateSize(candidate.size)}
+                    className={`rounded-lg px-2 py-1 text-xs font-medium transition ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-500'
+                        : 'bg-white text-zinc-600 border border-zinc-200/80 hover:bg-zinc-100 dark:bg-zinc-800 dark:border-white/[0.08] dark:text-zinc-300'
+                    }`}
+                  >
+                    {candidate.ratioLabel}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => onApply(template, referenceImage, syncRecommendedSize)}
+          onClick={() => onApply(template, referenceImage, effectiveTargetSize)}
           className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-semibold text-white shadow-sm transition ${
             referenceImage
               ? 'bg-blue-600 shadow-blue-600/20 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400'
@@ -457,7 +507,8 @@ export default function PromptLibraryModal() {
   const prompt = useStore((s) => s.prompt)
   const setPrompt = useStore((s) => s.setPrompt)
   const inputImages = useStore((s) => s.inputImages)
-  const addInputImage = useStore((s) => s.addInputImage)
+  const clearInputImages = useStore((s) => s.clearInputImages)
+  const setInputImages = useStore((s) => s.setInputImages)
   const setParams = useStore((s) => s.setParams)
   const showToast = useStore((s) => s.showToast)
   const setConfirmDialog = useStore((s) => s.setConfirmDialog)
@@ -548,36 +599,39 @@ export default function PromptLibraryModal() {
   const applyTemplate = (
     template: PromptTemplate,
     referenceImg?: InputImage | null,
-    syncSize = true,
+    targetSize?: string | null,
   ) => {
     const writeTemplate = () => {
       let finalPrompt = template.prompt
       if (referenceImg) {
-        addInputImage(referenceImg)
-        const imageIndex = inputImages.findIndex((img) => img.id === referenceImg.id)
-        const mentionLabel = imageIndex >= 0 ? `@图${imageIndex + 1}` : (inputImages.length > 0 ? `@图${inputImages.length + 1}` : '@图1')
-        finalPrompt = composePromptWithImageReference(template.prompt, mentionLabel, {
+        clearInputImages()
+        setInputImages([referenceImg])
+        cacheImage(referenceImg.id, referenceImg.dataUrl)
+        finalPrompt = composePromptWithImageReference(template.prompt, '@图1', {
           isProduct: template.category === '商品与电商' || template.subcategory.includes('商品') || template.subcategory.includes('样机'),
         })
+      } else {
+        clearInputImages()
       }
 
-      if (syncSize && template.recommendedSize) {
-        const resolvedSize = resolveTemplateSize(template.recommendedSize)
-        if (resolvedSize) {
-          setParams({ size: resolvedSize })
-        }
+      if (targetSize) {
+        setParams({ size: targetSize })
       }
 
       setPrompt(finalPrompt)
       close()
-      showToast(referenceImg ? '已带参考图套用模板' : '已填入模板', 'success')
+      const feedbackMessage = referenceImg
+        ? (targetSize ? `已套用模板（主体图 + ${targetSize}）` : '已带参考图套用模板')
+        : (targetSize ? `已填入模板（已切换尺寸为 ${targetSize}）` : '已填入模板')
+      showToast(feedbackMessage, 'success')
       focusPromptInput()
     }
 
-    if (prompt.trim()) {
+    const hasExistingContent = Boolean(prompt.trim() || inputImages.length > 0)
+    if (hasExistingContent) {
       setConfirmDialog({
-        title: '替换当前提示词',
-        message: '当前输入框已有内容，确定要用模板替换吗？',
+        title: '替换当前提示词与参考图',
+        message: '当前工作台已有提示词或参考图，确定要用模板替换吗？',
         confirmText: '替换',
         tone: 'warning',
         action: writeTemplate,
