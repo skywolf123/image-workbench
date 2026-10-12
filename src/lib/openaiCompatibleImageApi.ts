@@ -103,7 +103,9 @@ function getStringValue(source: Record<string, unknown>, key: string): string | 
 }
 
 function getErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
+  if (err instanceof Error) return err.message
+  if (typeof DOMException !== 'undefined' && err instanceof DOMException) return err.message
+  return String(err)
 }
 
 function getNumberValue(source: Record<string, unknown>, key: string): number | undefined {
@@ -496,7 +498,9 @@ async function callImagesApiSingle(opts: CallApiOptions, profile: ApiProfile): P
   const paths = createOpenAICompatiblePaths()
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), profile.timeout * 1000)
+  const timeoutId = setTimeout(() => {
+    controller.abort(new DOMException(`请求超时：超过 ${profile.timeout} 秒未响应`, 'TimeoutError'))
+  }, profile.timeout * 1000)
 
   try {
     let response: Response
@@ -913,7 +917,9 @@ async function callCustomHttpImageApi(opts: CallApiOptions, profile: ApiProfile,
   const isEdit = inputImageDataUrls.length > 0
   const mime = MIME_MAP[params.output_format] || 'image/png'
   const controller = new AbortController()
-  let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => controller.abort(), profile.timeout * 1000)
+  let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+    controller.abort(new DOMException(`请求超时：超过 ${profile.timeout} 秒未响应`, 'TimeoutError'))
+  }, profile.timeout * 1000)
 
   try {
     const proxyConfig = readClientDevProxyConfig()
@@ -1016,7 +1022,9 @@ async function callResponsesImageApiSingle(opts: CallApiOptions, profile: ApiPro
   const transport = resolveApiTransport(profile, proxyConfig)
   const requestHeaders = createRequestHeaders(profile)
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), profile.timeout * 1000)
+  const timeoutId = setTimeout(() => {
+    controller.abort(new DOMException(`请求超时：超过 ${profile.timeout} 秒未响应`, 'TimeoutError'))
+  }, profile.timeout * 1000)
 
   try {
     if (opts.maskDataUrl) {
