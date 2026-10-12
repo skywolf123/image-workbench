@@ -152,6 +152,8 @@ export interface AppSettings {
   allowPromptRewrite: boolean
   taskCompletionNotification: boolean
   enterSubmit: boolean
+  /** 多图并发请求：开启后多图任务（n > 1）拆分为多个并发单张非流式请求 */
+  concurrentImageRequests: boolean
   /** 偏好设置：是否在首页提供多提示词批量提交 */
   showBatchPrompt: boolean
   /** 多提示词批量提交，提示词之间空两行分隔 */

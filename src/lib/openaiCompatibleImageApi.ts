@@ -452,7 +452,7 @@ export async function callOpenAICompatibleImageApi(opts: CallApiOptions, profile
 
 async function callImagesApi(opts: CallApiOptions, profile: ApiProfile): Promise<CallApiResult> {
   const n = opts.params.n > 0 ? opts.params.n : 1
-  if ((profile.codexCli || (profile.streamImages && n > 1)) && n > 1) {
+  if ((profile.codexCli || (profile.streamImages && n > 1) || (!profile.streamImages && opts.settings.concurrentImageRequests)) && n > 1) {
     return callImagesApiConcurrent(opts, profile, n)
   }
 

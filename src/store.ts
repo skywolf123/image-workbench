@@ -1128,7 +1128,7 @@ function usesConcurrentImageRequests(settings: AppSettings, profile: ApiProfile,
   if (n <= 1) return false
   if (profile.provider === 'openai') {
     if (profile.apiMode === 'responses') return true
-    return profile.apiMode === 'images' && (profile.codexCli || profile.streamImages)
+    return profile.apiMode === 'images' && (profile.codexCli || profile.streamImages || settings.concurrentImageRequests)
   }
   return profile.provider !== 'fal' && profile.codexCli && !isAsyncCustomProviderTask(settings, profile.provider, hasInputImages)
 }
