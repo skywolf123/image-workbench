@@ -3,9 +3,6 @@ name: Build and Publish Docker Image
 on:
   push:
     tags: ['v*']
-  workflow_run:
-    workflows: ['Build Desktop Client']
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -13,34 +10,10 @@ permissions:
   packages: write
 
 jobs:
-  check:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-    outputs:
-      build: ${{ steps.check.outputs.build }}
-    steps:
-      - id: check
-        env:
-          SIGNING_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          # 配置了签名私钥时，推送 tag 先构建客户端，构建成功后由 workflow_run 构建镜像；未配置时推送 tag 直接构建
-          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
-            build=true
-          elif [[ "$GITHUB_EVENT_NAME" == workflow_run ]]; then
-            [[ -n "$SIGNING_KEY" ]] && build=true || build=false
-          else
-            [[ -z "$SIGNING_KEY" ]] && build=true || build=false
-          fi
-          echo "build=$build" >> "$GITHUB_OUTPUT"
-
   docker:
-    needs: check
-    if: ${{ needs.check.outputs.build == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - id: version
         run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
