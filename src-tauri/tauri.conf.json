@@ -48,7 +48,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA0NUU4Q0UyNEJBOTZBMTAKUldRUWFxbEw0b3hlQkQwMXFkK3VlOTBMdWxvTEpqRjJKclpoQXBBcjg2VlRuNGJyUmwwVHlDdmQK",
       "endpoints": [
-        "https://github.com/88lin/gpt-image-studio/releases/latest/download/latest.json"
+        "https://github.com/skywolf123/image-workbench/releases/latest/download/latest.json"
       ],
       "requireSignedVersion": true,
       "windows": {

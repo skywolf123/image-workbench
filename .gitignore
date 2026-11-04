@@ -4,6 +4,8 @@ dev-proxy.config.json
 .wrangler/
 .env.local
 .env.*.local
+# 本地调试用的上游地址与 Key，不随仓库分发
+.env.test
 .serena/
 .codegraph/
 .scratch/
