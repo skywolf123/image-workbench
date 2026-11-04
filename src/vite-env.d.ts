@@ -16,6 +16,10 @@ interface ImportMetaEnv {
   readonly VITE_LOCK_PRESET_KEY?: string
   readonly VITE_HIDE_API_SETTINGS?: string
   readonly VITE_BACKEND_FALLBACK?: string
+  readonly VITE_DEFAULT_UI_FONT?: string
+  readonly VITE_DEFAULT_MONO_FONT?: string
+  readonly VITE_BUILTIN_FONT_SOURCE?: string
+  readonly VITE_WEB_APP_URL?: string
 }
 
 interface ImportMeta {

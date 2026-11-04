@@ -9,6 +9,7 @@
 interface FakeStore {
   keyPath: string
   rows: Map<IDBValidKey, unknown>
+  indexes: Map<string, string>
 }
 
 function defer(task: () => void) {
@@ -27,6 +28,38 @@ class FakeRequest<T> {
 
 class FakeObjectStore {
   constructor(private store: FakeStore) {}
+
+  get indexNames() {
+    const names = [...this.store.indexes.keys()]
+    return {
+      length: names.length,
+      contains: (name: string) => this.store.indexes.has(name),
+      [Symbol.iterator]: () => names[Symbol.iterator](),
+    } as unknown as DOMStringList
+  }
+
+  createIndex(name: string, keyPath: string) {
+    this.store.indexes.set(name, keyPath)
+  }
+
+  /** 索引查询只支持 imageBlob 用到的 getAllKeys(value) */
+  index(name: string) {
+    const keyPath = this.store.indexes.get(name)
+    if (keyPath === undefined) throw new Error(`索引不存在：${name}`)
+    return {
+      getAllKeys: (value?: unknown) => {
+        const request = new FakeRequest<IDBValidKey[]>()
+        const keys = [...this.store.rows.entries()]
+          .filter(([, row]) => (row as Record<string, unknown>)[keyPath] === value)
+          .map(([key]) => key)
+        defer(() => {
+          request.result = keys
+          request.onsuccess?.()
+        })
+        return request
+      },
+    } as unknown as IDBIndex
+  }
 
   getAll() {
     const request = new FakeRequest<unknown[]>()
@@ -88,7 +121,7 @@ class FakeDatabase {
   }
 
   createObjectStore(name: string, options: { keyPath?: string } = {}) {
-    const store: FakeStore = { keyPath: options.keyPath ?? 'id', rows: new Map() }
+    const store: FakeStore = { keyPath: options.keyPath ?? 'id', rows: new Map(), indexes: new Map() }
     this.stores.set(name, store)
     return new FakeObjectStore(store)
   }

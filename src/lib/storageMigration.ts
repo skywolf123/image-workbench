@@ -1,4 +1,4 @@
-import { createObjectStores } from './db'
+import { createObjectStores } from './idb'
 import { LEGACY_MIGRATION_FLAG_KEY, LEGACY_STORAGE_NAME, STORAGE_NAME } from './storageNamespace'
 
 export interface MigrationResult {

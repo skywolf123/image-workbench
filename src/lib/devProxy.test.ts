@@ -5,7 +5,7 @@ import type { DevProxyConfig } from './devProxy'
 const mocks = vi.hoisted(() => ({ backendFallback: false }))
 
 // hasBackendFallback 在模块加载时读运行期占位符，这里替身成可控开关。
-vi.mock('./presetConfig', () => ({ hasBackendFallback: () => mocks.backendFallback }))
+vi.mock('./backendFallback', () => ({ hasBackendFallback: () => mocks.backendFallback }))
 
 const ENABLED_PROXY: DevProxyConfig = {
   enabled: true,

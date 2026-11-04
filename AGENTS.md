@@ -19,6 +19,7 @@
 | 运行测试 | `pnpm test` |
 | 监听测试 | `pnpm run test:watch` |
 | 模拟上游 API | `pnpm run mock:api`（本地调试代理用，默认 8787 端口） |
+| 生成第三方许可清单（需要先安装 cargo-about：`cargo install cargo-about --version 0.9.2 --locked --features cli`） | `pnpm run notices` |
 
 - 测试使用 Vitest，已有多个 `*.test.ts` 文件。
 - 不要新增 lint/formatter 配置文件，除非明确要求。
@@ -152,11 +153,18 @@ else params = baseParams
 
 - 代码注释使用**中文**，与项目现有风格保持一致。
 - UI 文案默认中文。
-- 注释应简洁，说明"为什么"而非"做了什么"——除非逻辑复杂不易一眼看出。
+- 注释应简洁，说明“为什么”而非“做了什么”——除非逻辑复杂不易一眼看出。代码本身能说清的不写注释。
+- 注释只描述代码现在的样子，读者是以后看代码的人，不是这次的审查者。不要写：
+  - 开发过程：改动前是什么样、修了什么问题、哪轮审查发现的、“新增”“改为”“不再”“之前”这类相对说法；
+  - 提交号、Issue / PR 编号及其讨论过程、会话或报告；
+  - 复述函数名、参数名或下一行代码，以及“注意”“重要”之类没有信息量的提示；
+  - 对不会发生的情况的辩解，或已删除代码的去向。
+- 涉及实测数据的取舍（例如某个供应商接口的兼容处理、超时或并发数的取值），注释只写结论和关键数字，不写测试经过。
 
 ## 发布版本升级
 
 - 准备新版本时，先检查当前分支相对远端的全部未推送提交和未提交修改，再据此编写 `RELEASE.md`。
+- `RELEASE.md` 只保留最新一个版本：写新版本时替换掉上一版本的段落，不要追加在其上方。
 - `RELEASE.md` 使用实际发布日期，只记录最终面向用户的新增、变更和修复；不要记录开发新内容时产生的中间调整或配套修复。
 - `RELEASE.md` 格式：
   - 标题使用 `## v版本号（YYYY-MM-DD）`，日期括号使用中文全角括号。
@@ -170,13 +178,19 @@ else params = baseParams
   - `package.json` 的 `version`。
   - `public/sw.js` 的 `CACHE_NAME` 版本，确保旧缓存能够在 Service Worker 激活时清理。
   - `RELEASE.md` 标题中的版本号和日期。
-- `pnpm-lock.yaml` 不记录根包版本，无需同步（此前 AGENTS.md 写的 `package-lock.json` 已随 npm 一并移除）。
-- 发布时必须打 annotated tag 并推送（如 `v0.7.12-iw04`，与版本号一致，加 `v` 前缀）：`.github/workflows/docker.yml` 只在 push `v*` tag 或手动触发时构建并发布 ghcr.io 镜像，只推提交不会出新镜像。
+  - `src-tauri/Cargo.toml` 的 `version`，以及 `src-tauri/Cargo.lock` 中 `gpt-image-studio` 包的 `version`（`tauri.conf.json` 直接引用 `package.json`，无需修改）。
+- `pnpm-lock.yaml` 不记录根包版本，无需同步（`package-lock.json` 已随 npm 一并移除）。
+- 发布时必须打 annotated tag 并推送（如 `v0.8.4-iw01`，与版本号一致，加 `v` 前缀）：`.github/workflows/docker.yml` 只在 push `v*` tag 或手动触发时构建并发布 ghcr.io 镜像，只推提交不会出新镜像。
+- 客户端更新包由 `tauri build` 用私钥签名（`TAURI_SIGNING_PRIVATE_KEY`，私钥设有密码，需同时提供 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`；GitHub Secrets 中两者都要设置，本机打包时以环境变量传入，密码不得写进任何文件或提交），发布的 Release 中必须包含安装包、对应的 `.sig` 和 `latest.json`，否则客户端的应用内更新会提示找不到更新包；私钥不得提交进仓库。
+- 推送 `v版本号` tag 会触发 `.github/workflows/tauri-release.yml`（只由推送 tag 触发，不提供为已有 tag 手动重新构建的入口；已发布版本有问题时发布新版本修复）：校验 tag 与 `package.json`、`Cargo.toml` 的版本一致，在 Windows 上构建 NSIS 安装包，并把安装包、`.sig` 和 `latest.json` 上传到该 tag 的 Release。工作流最后用 `gh release edit` 把 Release 的标题设为 tag、正文设为 `RELEASE.md` 中对应版本的段落，并设为正式版（非草稿、非预发布）；手动创建的 Release 也会被覆盖。因此先在 `RELEASE.md` 写好该版本再打 tag，正文以 `RELEASE.md` 为准；不要预先手动创建草稿 Release（tauri-action 查找已有 Release 时不匹配草稿，会另建一个），之后也不要把 Release 改为草稿或预发布，否则客户端的更新地址（`releases/latest/download/latest.json`）找不到它。
+- 网页版部署（`deploy.yml` 的 GitHub Pages 和 `vercel-tag-deploy.yml` 的 Vercel）与 Docker 镜像构建（`docker.yml`）在配置了签名私钥的仓库中由该工作流成功后触发，确保它们上线时客户端 Release 已存在；未配置签名私钥时客户端构建跳过，推送 tag 后直接部署。
+- 修改 `src-tauri/windows/installer.nsi`（基于 Tauri 内置模板的自定义 NSIS 模板）或升级 `@tauri-apps/cli` 时，需对照新版内置模板同步，并在本机用 `pnpm run tauri:build` 构建后实测安装、覆盖安装和卸载。
 - 更新后全局搜索旧版本号，确认没有遗漏仍需同步的位置；历史发布记录中的旧版本号不需要修改。
 - 发布前运行 `pnpm run build` 和 `pnpm test`，并复查最终差异。
 
 ## 架构约束
 
+- **依赖协议**：只引入 MIT、Apache 2.0、BSD、ISC、Zlib、公有领域等宽松协议的依赖，**不引入 GPL / AGPL / LGPL**。新增依赖前先确认协议；第三方许可清单 `src/assets/third-party-notices.txt` 是提交进仓库的生成文件，在“设置 → 关于 → 第三方许可”中显示（Web 版与客户端相同），Rust 或前端依赖变化后运行 `npm run notices` 重新生成并一起提交；Rust 依赖中出现新的宽松协议时先确认，再加入 `src-tauri/about.toml` 的 `accepted`；npm 包中没有许可文件时生成会失败，需从上游仓库对应版本取许可原文放进 `third-party-licenses/npm/`。Tauri 等带进来的 MPL-2.0 间接依赖（未修改）可以接受，许可清单中注明其源码位置。
 - 新增纯函数或工具逻辑时，放 `src/lib/` 而非 `src/store.ts`。store 文件已过大，应只包含 state 定义和 action 入口。
 - 避免在多处重复定义相同工具函数（如 `blobToDataUrl`），优先复用 `src/lib/` 中已有导出。
 - 新增较大功能时，优先拆成独立模块（lib 函数 + hook + 组件），而非全部塞进现有大文件。
@@ -196,7 +210,7 @@ else params = baseParams
   - 同步按成员码隔离（`X-Member-Id`），每个成员一份 `state.json`（原子写入）与图片目录；删除是任务级回收站，还原/清空走 `/api/sync/trash/*`。
 - 前端配置与后端网关是两条独立的路：上游的预置配置机制（`DEFAULT_API_URL`、`LOCK_PRESET_CONFIG_PARAMS` 等）不要动其语义；网关只接住「前端没填 Key」的请求（`src/lib/devProxy.ts` 的 `resolveApiTransport` 判定顺序：网关 > 代理 > 直连，顺序是老部署迁移的关键，见 `docs/adr/0002-*`）。
 - 同步引擎在 `src/lib/syncEngine.ts`（意图队列、合并、图片对账），接线在 `src/lib/syncBridge.ts`。待推送意图与已知集必须按成员码分键持久化，跨成员泄漏会把本地数据误判为「远端已删除」而清掉。
-- 修改完成后优先运行 `pnpm run build` 验证编译，再运行 `pnpm test` 验证测试。
+- 修改完成后优先运行 `pnpm run build` 验证编译，再运行 `pnpm test` 验证测试；依赖有变化时运行 `pnpm run notices`。
 
 ## Agent skills
 

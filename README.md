@@ -328,12 +328,11 @@ pnpm test         # 运行测试
 
 ---
 
-<a id="preset-config"></a>
-### 预置配置说明
+部署时可以通过环境变量 `VITE_DEFAULT_API_URL` 提供**预置配置**：部署端预先加入用户配置列表的 API 配置，格式与用户自建的配置相同，用户打开页面通常只需补充 API Key。
 
 Node 服务部署与纯静态部署都支持通过环境变量提供"预置配置"——部署端预先加入用户配置列表的 API 配置。用户打开页面时会自动看到这些配置。
 
-环境变量的值支持三种填写方式：
+仓库中的 GitHub Actions 工作流分别负责客户端、Vercel、GitHub Pages 和 Docker 镜像，不需要的可在 **Actions** 中选中对应工作流后停用（**Disable workflow**）。
 
 | 填写方式 | 说明 | 示例 |
 |------|------|------|
@@ -371,7 +370,11 @@ Node 服务部署与纯静态部署都支持通过环境变量提供"预置配�
 
 支持通过 URL 查询参数快速填入 API 配置，便于与 New API 等平台集成。
 
-| 参数 | 说明 | 示例 |
+- 构建时变量需在构建前设置。
+- Docker 使用去掉 `VITE_` 前缀的同名变量，在容器启动时读取。
+- Docker 和客户端的专用变量见各自的部署方式。
+
+| 构建时变量 | Docker 变量 | 说明 |
 |------|------|------|
 | `apiUrl` | API Base URL | `?apiUrl=https://api.example.com/v1` |
 | `apiKey` | API Key | `?apiKey=sk-xxxx` |
@@ -467,15 +470,64 @@ JSON 结构示例：
 
 ---
 
+<a id="preset-config"></a>
+## 📋 预置配置
+
+`VITE_DEFAULT_API_URL` 支持三种写法。
+
+**1. API 地址**
+
+```dotenv
+VITE_DEFAULT_API_URL=https://api.openai.com/v1
+```
+
+适合只提供一个配置的部署：
+
+- 自动创建 ID 为 `default-openai` 的 OpenAI 兼容预置配置，模型、超时等使用应用默认值。
+- 地址末尾带 `/` 时直接拼接接口，不补 `/v1`。
+- 之后改用 JSON 或导入链接时，把 `id` 设为 `default-openai` 即可继续更新这个配置。
+
+**2. API 地址 + 查询参数**
+
+```dotenv
+VITE_DEFAULT_API_URL=https://api.openai.com/v1?model=gpt-image-2.5-sunburst&apiMode=images
+```
+
+在地址后追加参数，预填 Key、模型等字段。可用参数与下文 [URL 传参快速填充](#url-quick-fill) 相同（`profileId` 除外）。
+
+**3. 完整 JSON**
+
+需要预置多个配置、自定义供应商或 Agent 时，按下文 JSON 格式编写，再用以下任一方式提供：
+
+- **仓库内或本地文件（推荐）**：填写相对项目根目录的路径，如 `./gpt-image-config.example.json`。Docker 中填写容器内路径，宿主机文件需挂载到容器内。
+- **远程文件**：填写以 `.json` 结尾的 HTTP／HTTPS 地址，只需部署服务器能访问（可位于内网），用户浏览器不必能访问。
+- **导入链接**：在任意一个已部署的在线实例中配置好后，复制配置的导入链接（含 `?settings=` 参数，不勾选“New API 变量配置”）。链接只包含当前选中的配置及其关联的自定义供应商。
+
+```dotenv
+VITE_DEFAULT_API_URL=./gpt-image-config.example.json
+VITE_DEFAULT_API_URL=https://example.com/gpt-image-config.json
+VITE_DEFAULT_API_URL=https://你的域名?settings=%7B%22profiles%22%3A%5B...%5D%7D
+```
+
+文件路径和远程地址会在构建、开发服务器启动或容器启动时读取，并内嵌到页面中。
+
+**重新部署时**
+
+- **参数更新**：API 地址、模型、超时等与上次部署快照比较。部署值变化时覆盖一次本地值，之后保留用户修改，直到部署值再次变化。
+- **API Key**：始终由用户在本地管理，重新部署不覆盖。
+- **排序与删除**：预置配置可拖动；预置配置和预置供应商均可删除，删除后重新部署不会恢复。需要锁定参数或禁止删除时，使用上文的限制变量。
+- **下线预置清理**：部署端移除某个预置后，若用户未修改过且无历史任务引用，自动从本地删除；否则转为普通配置保留。
+- **失效供应商清理**：随预置引入的自定义供应商不再被任何配置使用、且从未被用户修改时，自动清理。
+
 <a id="preset-config-json"></a>
-## 📋 预置配置 JSON 格式
+### JSON 格式
 
 使用 JSON 文件或分享链接提供预置配置时，JSON 对象包含两个顶层字段：
 
 - **`customProviders`**（数组）：自定义供应商定义。如果只使用内置供应商（OpenAI 兼容、sub2api（异步）或 fal.ai），此数组留空 `[]` 即可。
 - **`profiles`**（数组）：预置的 API 配置列表。每项对应用户配置页中的一个配置条目。
 
-### 配置列表字段说明（`profiles`）
+`profiles` 中每项的字段：
 
 | 字段 | 必填 | 说明 |
 |------|------|------|

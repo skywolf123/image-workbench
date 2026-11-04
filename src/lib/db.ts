@@ -1,67 +1,49 @@
-import type { AgentConversation, TaskRecord, StoredImage, StoredImageThumbnail } from '../types'
-import { STORAGE_NAME } from './storageNamespace'
+import type { StoredImage, StoredImageThumbnail } from '../types'
+import * as indexedDbBackend from './dbIndexedDb'
+import * as tauriBackend from './dbTauri'
+import { dbTransaction, STORE_SYNC_STATE } from './idb'
+import { isTauri } from './platform'
 
-const DB_NAME = STORAGE_NAME
-const DB_VERSION = 4
-const STORE_TASKS = 'tasks'
-const STORE_IMAGES = 'images'
-const STORE_THUMBNAILS = 'thumbnails'
-const STORE_AGENT_CONVERSATIONS = 'agentConversations'
-/** 同步引擎的元数据（待推送意图、已知任务 id 集），键值形。 */
-const STORE_SYNC_STATE = 'syncState'
+export { createObjectStores } from './idb'
+
 const THUMBNAIL_MAX_SIZE = 720
 const THUMBNAIL_QUALITY = 0.9
 const THUMBNAIL_VERSION = 2
 
 export const CURRENT_THUMBNAIL_VERSION = THUMBNAIL_VERSION
 
-export function createObjectStores(db: IDBDatabase) {
-  if (!db.objectStoreNames.contains(STORE_TASKS)) {
-    db.createObjectStore(STORE_TASKS, { keyPath: 'id' })
-  }
-  if (!db.objectStoreNames.contains(STORE_IMAGES)) {
-    db.createObjectStore(STORE_IMAGES, { keyPath: 'id' })
-  }
-  if (!db.objectStoreNames.contains(STORE_THUMBNAILS)) {
-    db.createObjectStore(STORE_THUMBNAILS, { keyPath: 'id' })
-  }
-  if (!db.objectStoreNames.contains(STORE_AGENT_CONVERSATIONS)) {
-    db.createObjectStore(STORE_AGENT_CONVERSATIONS, { keyPath: 'id' })
-  }
-  if (!db.objectStoreNames.contains(STORE_SYNC_STATE)) {
-    db.createObjectStore(STORE_SYNC_STATE, { keyPath: 'key' })
-  }
-}
+// 底层存取按平台转发：网页版用 IndexedDB，客户端用 Rust 侧的 SQLite 与图片文件；标注类型以约束两套实现接口一致
+const backend: typeof indexedDbBackend = isTauri ? tauriBackend : indexedDbBackend
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = () => createObjectStores(req.result)
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-
-function dbTransaction<T>(
-  storeName: string,
-  mode: IDBTransactionMode,
-  fn: (store: IDBObjectStore) => IDBRequest<T>,
-): Promise<T> {
-  return openDB().then(
-    (db) =>
-      new Promise((resolve, reject) => {
-        const tx = db.transaction(storeName, mode)
-        const store = tx.objectStore(storeName)
-        const req = fn(store)
-        req.onsuccess = () => resolve(req.result)
-        req.onerror = () => reject(req.error)
-      }),
-  )
-}
+export const {
+  getAllTasks,
+  putTask,
+  deleteTask,
+  commitTaskDeletion,
+  clearTasks,
+  getAllAgentConversations,
+  putAgentConversation,
+  clearAgentConversations,
+  replaceAgentConversations,
+  getImage,
+  getImageMeta,
+  getStoredImageThumbnail,
+  putImageThumbnail,
+  getAllImages,
+  getAllImageIds,
+  putImage,
+  deleteImage,
+  clearImages,
+} = backend
 
 // ===== Sync state（同步元数据）=====
 
-/** 同步引擎的持久化元数据走这个键值仓：待推送意图、已知任务 id 集。 */
+/**
+ * 同步引擎的持久化元数据走这个键值仓：待推送意图、已知任务 id 集。
+ *
+ * 两套平台都落在 WebView/浏览器的 IndexedDB 里：这几个键是本机的同步簿记，
+ * 不属于要跟随数据目录迁移的用户数据。
+ */
 export function getSyncValue<T>(key: string): Promise<T | null> {
   return dbTransaction(STORE_SYNC_STATE, 'readonly', (s) => s.get(key)).then((entry) =>
     entry ? (entry as { value: T }).value : null,
@@ -77,95 +59,16 @@ export function removeSyncValue(key: string): Promise<undefined> {
   return dbTransaction(STORE_SYNC_STATE, 'readwrite', (s) => s.delete(key)).then(() => undefined)
 }
 
-// ===== Tasks =====
-
-export function getAllTasks(): Promise<TaskRecord[]> {
-  return dbTransaction(STORE_TASKS, 'readonly', (s) => s.getAll())
-}
-
-export function putTask(task: TaskRecord): Promise<IDBValidKey> {
-  return dbTransaction(STORE_TASKS, 'readwrite', (s) => s.put(task))
-}
-
-export function deleteTask(id: string): Promise<undefined> {
-  return dbTransaction(STORE_TASKS, 'readwrite', (s) => s.delete(id))
-}
-
-export function commitTaskDeletion(deletedTaskIds: string[], updatedTasks: TaskRecord[], updatedConversations: AgentConversation[]): Promise<undefined> {
-  return openDB().then(
-    (db) =>
-      new Promise((resolve, reject) => {
-        const tx = db.transaction([STORE_TASKS, STORE_AGENT_CONVERSATIONS], 'readwrite')
-        const taskStore = tx.objectStore(STORE_TASKS)
-        const conversationStore = tx.objectStore(STORE_AGENT_CONVERSATIONS)
-        for (const id of deletedTaskIds) taskStore.delete(id)
-        for (const task of updatedTasks) taskStore.put(task)
-        for (const conversation of updatedConversations) conversationStore.put(conversation)
-        tx.oncomplete = () => resolve(undefined)
-        tx.onerror = () => reject(tx.error)
-        tx.onabort = () => reject(tx.error)
-      }),
-  )
-}
-
-export function clearTasks(): Promise<undefined> {
-  return dbTransaction(STORE_TASKS, 'readwrite', (s) => s.clear())
-}
-
-// ===== Agent conversations =====
-
-export function getAllAgentConversations(): Promise<AgentConversation[]> {
-  return dbTransaction(STORE_AGENT_CONVERSATIONS, 'readonly', (s) => s.getAll())
-}
-
-export function putAgentConversation(conversation: AgentConversation): Promise<IDBValidKey> {
-  return dbTransaction(STORE_AGENT_CONVERSATIONS, 'readwrite', (s) => s.put(conversation))
-}
-
-export function clearAgentConversations(): Promise<undefined> {
-  return dbTransaction(STORE_AGENT_CONVERSATIONS, 'readwrite', (s) => s.clear())
-}
-
-export function replaceAgentConversations(conversations: AgentConversation[]): Promise<undefined> {
-  return openDB().then(
-    (db) =>
-      new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_AGENT_CONVERSATIONS, 'readwrite')
-        const store = tx.objectStore(STORE_AGENT_CONVERSATIONS)
-        store.clear()
-        for (const conversation of conversations) store.put(conversation)
-        tx.oncomplete = () => resolve(undefined)
-        tx.onerror = () => reject(tx.error)
-        tx.onabort = () => reject(tx.error)
-      }),
-  )
-}
-
-// ===== Images =====
-
-export function getImage(id: string): Promise<StoredImage | undefined> {
-  return dbTransaction(STORE_IMAGES, 'readonly', (s) => s.get(id))
-}
-
-export function getStoredImageThumbnail(id: string): Promise<StoredImageThumbnail | undefined> {
-  return dbTransaction(STORE_THUMBNAILS, 'readonly', (s) => s.get(id))
-}
-
-export async function getStoredFreshImageThumbnail(id: string): Promise<StoredImageThumbnail | undefined> {
-  const thumbnail = await getStoredImageThumbnail(id)
-  return thumbnail?.thumbnailVersion === THUMBNAIL_VERSION ? thumbnail : undefined
-}
-
-export function putImageThumbnail(thumbnail: StoredImageThumbnail): Promise<IDBValidKey> {
-  return dbTransaction(STORE_THUMBNAILS, 'readwrite', (s) => s.put(thumbnail))
-}
+// ===== Thumbnails =====
 
 export async function getImageThumbnail(id: string): Promise<StoredImageThumbnail | undefined> {
   const existingThumbnail = await getStoredImageThumbnail(id)
   if (existingThumbnail?.thumbnailVersion === THUMBNAIL_VERSION) {
-    const image = await getImage(id)
-    if (image && (!image.width || !image.height) && existingThumbnail.width && existingThumbnail.height) {
-      await putImage({ ...image, width: existingThumbnail.width, height: existingThumbnail.height })
+    // 先只查元数据，确实缺宽高时才读出整张原图写回
+    const meta = await getImageMeta(id)
+    if (meta && (!meta.width || !meta.height) && existingThumbnail.width && existingThumbnail.height) {
+      const image = await getImage(id)
+      if (image) await putImage({ ...image, width: existingThumbnail.width, height: existingThumbnail.height })
     }
     return existingThumbnail
   }
@@ -202,46 +105,6 @@ export async function getImageThumbnail(id: string): Promise<StoredImageThumbnai
     await putImage({ ...image, width: metadata.width, height: metadata.height })
   }
   return thumbnail
-}
-
-export function getAllImages(): Promise<StoredImage[]> {
-  return dbTransaction(STORE_IMAGES, 'readonly', (s) => s.getAll())
-}
-
-export function getAllImageIds(): Promise<string[]> {
-  return dbTransaction(STORE_IMAGES, 'readonly', (s) => s.getAllKeys()).then((keys) =>
-    keys.map(String),
-  )
-}
-
-export function putImage(image: StoredImage): Promise<IDBValidKey> {
-  return dbTransaction(STORE_IMAGES, 'readwrite', (s) => s.put(image))
-}
-
-export function deleteImage(id: string): Promise<undefined> {
-  return openDB().then(
-    (db) =>
-      new Promise((resolve, reject) => {
-        const tx = db.transaction([STORE_IMAGES, STORE_THUMBNAILS], 'readwrite')
-        tx.objectStore(STORE_IMAGES).delete(id)
-        tx.objectStore(STORE_THUMBNAILS).delete(id)
-        tx.oncomplete = () => resolve(undefined)
-        tx.onerror = () => reject(tx.error)
-      }),
-  )
-}
-
-export function clearImages(): Promise<undefined> {
-  return openDB().then(
-    (db) =>
-      new Promise((resolve, reject) => {
-        const tx = db.transaction([STORE_IMAGES, STORE_THUMBNAILS], 'readwrite')
-        tx.objectStore(STORE_IMAGES).clear()
-        tx.objectStore(STORE_THUMBNAILS).clear()
-        tx.oncomplete = () => resolve(undefined)
-        tx.onerror = () => reject(tx.error)
-      }),
-  )
 }
 
 // ===== Image hashing & dedup =====
@@ -282,7 +145,7 @@ export interface StoreImageResult {
 /**
  * 图片写入的统一入口回调。
  *
- * 上游所有图片落库都经过 `storeImageWithSize`，所以备份只需挂在这里一处，
+ * 应用里所有图片落库都经过 `storeImageWithSize`，所以同步只需挂在这里一处，
  * 而不是逐个调用点挂钩。
  */
 let imageStoredHook: ((image: StoredImage) => void) | null = null

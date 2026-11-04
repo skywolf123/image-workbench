@@ -2,28 +2,22 @@ import type { ApiProfile, AppSettings, CustomProviderDefinition, PresetAgentConf
 import { getPresetAgentSettings, normalizeSettings } from './apiProfiles'
 import { readRuntimeEnv } from './runtimeEnv'
 
+import { hasBackendFallback } from './backendFallback'
+
+export { hasBackendFallback }
+
 const RAW_SHOW_PRESET_CONFIG_ONLY = readRuntimeEnv(import.meta.env?.VITE_SHOW_PRESET_CONFIG_ONLY)
 const SHOW_PRESET_CONFIG_ONLY = (RAW_SHOW_PRESET_CONFIG_ONLY || readRuntimeEnv(import.meta.env?.VITE_SHOW_DEFAULT_CONFIG_ONLY)) === 'true'
 const LOCK_PRESET_CONFIG_PARAMS = readRuntimeEnv(import.meta.env?.VITE_LOCK_PRESET_CONFIG_PARAMS) === 'true'
 const PREVENT_PRESET_CONFIG_DELETION = readRuntimeEnv(import.meta.env?.VITE_PREVENT_PRESET_CONFIG_DELETION) === 'true'
 const LOCK_PRESET_KEY = readRuntimeEnv(import.meta.env?.VITE_LOCK_PRESET_KEY) === 'true'
 const HIDE_API_SETTINGS = readRuntimeEnv(import.meta.env?.VITE_HIDE_API_SETTINGS) === 'true'
-const BACKEND_FALLBACK = readRuntimeEnv(import.meta.env?.VITE_BACKEND_FALLBACK) === 'true'
 
 /** 隐藏整个 API 配置页，让用户没有前端配置的入口。 */
 export function isApiSettingsHidden() {
   return HIDE_API_SETTINGS
 }
 
-/**
- * 部署端在后端持有 Key（GATEWAY_API_KEY）时置真。
- *
- * 前端据此放宽「必须填 Key」的校验：用户不填不是漏了，而是本来就该由网关补上。
- * 它不参与任何锁定——前端自己配了 Key 依然优先。
- */
-export function hasBackendFallback() {
-  return BACKEND_FALLBACK
-}
 
 /**
  * 这份配置能不能直接拿去发请求。
@@ -32,7 +26,7 @@ export function hasBackendFallback() {
  * 注入，前端再按「必须填 Key」判断就会永远挡住生成。
  */
 export function hasUsableApiConfig(profile: Pick<ApiProfile, 'apiKey'>) {
-  return BACKEND_FALLBACK || Boolean(profile.apiKey)
+  return hasBackendFallback() || Boolean(profile.apiKey)
 }
 
 let presetProfiles: ApiProfile[] = []

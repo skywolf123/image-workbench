@@ -14,13 +14,17 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
+export function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
 export function dataUrlToBytes(dataUrl: string): { ext: string; bytes: Uint8Array } {
   const match = dataUrl.match(/^data:image\/(\w+);base64,/)
   const ext = match?.[1] ?? 'png'
-  const binary = atob(dataUrl.replace(/^data:[^;]+;base64,/, ''))
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return { ext, bytes }
+  return { ext, bytes: base64ToBytes(dataUrl.replace(/^data:[^;]+;base64,/, '')) }
 }
 
 export function bytesToDataUrl(bytes: Uint8Array, filePath: string): string {

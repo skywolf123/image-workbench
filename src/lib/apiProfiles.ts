@@ -26,6 +26,8 @@ import { readRuntimeEnv } from './runtimeEnv'
 import { isImportableConfigUrl } from './importableConfigUrl'
 import { DEFAULT_IMAGES_MODEL } from './imageModels'
 import { DEFAULT_BATCH_PROMPT_CONCURRENCY, normalizeBatchPromptConcurrency } from './batchPrompts'
+import { normalizeFontMode } from './fonts'
+import { DEFAULT_PRIVACY_MODE_SHORTCUT, normalizeShortcutSetting } from './keyboardShortcut'
 
 const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 const RAW_DEFAULT_API_URL = readRuntimeEnv(import.meta.env?.VITE_DEFAULT_API_URL)
@@ -784,8 +786,16 @@ export function normalizeSettings(input: Partial<AppSettings> | unknown): AppSet
     retryMode: normalizeRetryMode(record.retryMode, record.alwaysShowRetryButton === true),
     allowPromptRewrite: typeof record.allowPromptRewrite === 'boolean' ? record.allowPromptRewrite : false,
     taskCompletionNotification: typeof record.taskCompletionNotification === 'boolean' ? record.taskCompletionNotification : false,
+    autoCheckUpdate: typeof record.autoCheckUpdate === 'boolean' ? record.autoCheckUpdate : true,
+    writeLogFile: typeof record.writeLogFile === 'boolean' ? record.writeLogFile : true,
     enterSubmit: typeof record.enterSubmit === 'boolean' ? record.enterSubmit : false,
     concurrentImageRequests: typeof record.concurrentImageRequests === 'boolean' ? record.concurrentImageRequests : false,
+    privacyModeShortcut: normalizeShortcutSetting(record.privacyModeShortcut, DEFAULT_PRIVACY_MODE_SHORTCUT),
+    colorMode: record.colorMode === 'light' || record.colorMode === 'dark' ? record.colorMode : 'system',
+    uiFont: normalizeFontMode(record.uiFont),
+    uiFontName: typeof record.uiFontName === 'string' ? record.uiFontName.trim() : '',
+    monoFont: normalizeFontMode(record.monoFont),
+    monoFontName: typeof record.monoFontName === 'string' ? record.monoFontName.trim() : '',
     showBatchPrompt: typeof record.showBatchPrompt === 'boolean' ? record.showBatchPrompt : false,
     batchPromptEnabled: typeof record.batchPromptEnabled === 'boolean' ? record.batchPromptEnabled : false,
     batchPromptMode: record.batchPromptMode === 'concurrent' ? 'concurrent' : 'queue',
@@ -793,6 +803,7 @@ export function normalizeSettings(input: Partial<AppSettings> | unknown): AppSet
     batchPromptConcurrency: normalizeBatchPromptConcurrency(record.batchPromptConcurrency),
     referenceImageEditAction: normalizeReferenceImageEditAction(record.referenceImageEditAction),
     zipDownloadRoutes: normalizeZipDownloadRoutes(record.zipDownloadRoutes),
+    saveLocationMode: record.saveLocationMode === 'default' ? 'default' : 'ask',
     agentScrollToBottomAfterSubmit: typeof record.agentScrollToBottomAfterSubmit === 'boolean' ? record.agentScrollToBottomAfterSubmit : true,
     agentMaxToolRounds: normalizeAgentMaxToolRounds(record.agentMaxToolRounds),
     agentWebSearch: typeof record.agentWebSearch === 'boolean' ? record.agentWebSearch : false,
@@ -1370,8 +1381,11 @@ export const DEFAULT_SETTINGS: AppSettings = normalizeSettings({
   retryMode: 'new',
   allowPromptRewrite: false,
   taskCompletionNotification: false,
+  autoCheckUpdate: true,
+  writeLogFile: true,
   enterSubmit: false,
   concurrentImageRequests: false,
+  privacyModeShortcut: DEFAULT_PRIVACY_MODE_SHORTCUT,
   showBatchPrompt: false,
   batchPromptEnabled: false,
   batchPromptMode: 'queue',
@@ -1379,6 +1393,7 @@ export const DEFAULT_SETTINGS: AppSettings = normalizeSettings({
   batchPromptConcurrency: DEFAULT_BATCH_PROMPT_CONCURRENCY,
   referenceImageEditAction: 'ask',
   zipDownloadRoutes: DEFAULT_ZIP_DOWNLOAD_ROUTES,
+  saveLocationMode: 'ask',
   agentScrollToBottomAfterSubmit: true,
   agentMaxToolRounds: DEFAULT_AGENT_MAX_TOOL_ROUNDS,
   agentWebSearch: false,

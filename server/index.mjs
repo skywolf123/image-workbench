@@ -76,6 +76,9 @@ const BUNDLE_PLACEHOLDERS = [
   ['__VITE_LOCK_PRESET_KEY_PLACEHOLDER__', 'presetKeyLocked'],
   ['__VITE_HIDE_API_SETTINGS_PLACEHOLDER__', 'apiSettingsHidden'],
   ['__VITE_BACKEND_FALLBACK_PLACEHOLDER__', 'backendFallback'],
+  ['__VITE_DEFAULT_UI_FONT_PLACEHOLDER__', 'defaultUiFont'],
+  ['__VITE_DEFAULT_MONO_FONT_PLACEHOLDER__', 'defaultMonoFont'],
+  ['__VITE_BUILTIN_FONT_SOURCE_PLACEHOLDER__', 'builtinFontSource'],
 ]
 
 function readText(value) {
@@ -193,6 +196,9 @@ export async function resolveServerConfig(options = {}) {
       apiSettingsHidden: isTruthy(env.HIDE_API_SETTINGS) ? 'true' : 'false',
       // 网关持有 Key 时前端才可以留空。它只放宽校验，不参与锁定——前端填了 Key 依然优先。
       backendFallback: gatewayApiKey ? 'true' : 'false',
+      defaultUiFont: readText(env.DEFAULT_UI_FONT),
+      defaultMonoFont: readText(env.DEFAULT_MONO_FONT),
+      builtinFontSource: readText(env.BUILTIN_FONT_SOURCE),
     },
   }
 }
