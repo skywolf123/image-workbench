@@ -347,7 +347,7 @@ export default function InputParamsPanel({
           />
           <ButtonTooltip
             visible={transparentOutputHint.visible}
-            text="实现方式可在设置的 API 配置中选择"
+            text={<>实现方式可在<strong className="font-semibold">「设置 → API 配置」</strong>中选择</>}
           />
         </div>
       )}
