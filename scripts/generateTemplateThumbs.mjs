@@ -1,25 +1,19 @@
-// 生成提示词模板缩略图：下载数据文件里引用的全部示例图，压缩为 256px WebP 存入 public/templates/。
-// 文件名由原图 URL 哈希决定，运行时 src/lib/promptTemplates.ts 的 getTemplateThumbnailUrl()
-// 用同一哈希拼路径，因此改URL或哈希时两边必须同步修改。
-// 用法：pnpm add -D sharp && node scripts/generateTemplateThumbs.mjs [--force]
-import { existsSync, readFileSync } from 'node:fs'
+// 生成提示词模板缩略图：下载模板库引用的全部示例图，压缩为 256px WebP 存入 public/templates/。
+// 图片清单直接取运行时导出的 BUILT_IN_PROMPT_TEMPLATES（经过去重与排除），文件名取 thumbnailUrl，
+// 与 src/lib/promptTemplates.ts 的 getTemplateThumbnailUrl() 天然同步，不再重复实现哈希。
+// 用法：node scripts/generateTemplateThumbs.mjs [--force]
+import { existsSync } from 'node:fs'
 import { mkdir, readdir, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { ProxyAgent, fetch as undiciFetch } from 'undici'
+import { createServer } from 'vite'
 
 const proxyUrl = process.env.https_proxy || process.env.http_proxy || process.env.ALL_PROXY
 const proxyDispatcher = proxyUrl ? new ProxyAgent(proxyUrl) : undefined
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const DATA_FILES = [
-  'src/lib/promptTemplateData.ts',
-  'src/lib/houshifangPromptTemplates.ts',
-  'src/lib/kkkmPromptTemplates.ts',
-  'src/lib/freestylePromptTemplates.ts',
-  'src/lib/youmindPromptTemplates.ts',
-]
 const OUT_DIR = path.join(ROOT, 'public', 'templates')
 const THUMB_SIZE = 256
 const THUMB_QUALITY = 78
@@ -27,58 +21,29 @@ const CONCURRENCY = 8
 const FETCH_TIMEOUT_MS = 30_000
 const FORCE = process.argv.includes('--force')
 
-// 与 src/lib/promptTemplates.ts 的 normalizeGithubImageUrl 保持一致
-function normalizeGithubImageUrl(url) {
-  const freestyleImagePrefix = 'https://cdn.jsdmirror.com/gh/freestylefly/awesome-gpt-image-2@main/images/'
-  if (url.startsWith(freestyleImagePrefix)) {
-    return url.replace('@main/images/', '@main/data/images/')
+// 用 Vite 的 SSR 加载器读 TS 模块，避免在脚本里重复实现模板数据的拼装规则
+async function loadTemplates() {
+  const server = await createServer({
+    configFile: false,
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'error',
+  })
+  try {
+    const mod = await server.ssrLoadModule('/src/lib/promptTemplates.ts')
+    return mod.BUILT_IN_PROMPT_TEMPLATES
+  } finally {
+    await server.close()
   }
-
-  const rawPrefix = 'https://raw.githubusercontent.com/'
-  if (url.startsWith(rawPrefix)) {
-    const parts = url.slice(rawPrefix.length).split('/')
-    const [owner, repo, branch, ...pathParts] = parts
-    if (owner && repo && branch && pathParts.length > 0) {
-      return `https://cdn.jsdmirror.com/gh/${owner}/${repo}@${branch}/${pathParts.join('/')}`
-    }
-  }
-
-  const githubBlobMatch = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/)
-  if (githubBlobMatch) {
-    const [, owner, repo, branch, filePath] = githubBlobMatch
-    return `https://cdn.jsdmirror.com/gh/${owner}/${repo}@${branch}/${filePath}`
-  }
-
-  return url
 }
 
-// 与运行时 getTemplateThumbnailHash 保持一致
-function thumbFilename(url) {
-  let hash = 0x811c9dc5
-  for (let idx = 0; idx < url.length; idx += 1) {
-    hash ^= url.charCodeAt(idx)
-    hash = Math.imul(hash, 0x01000193) >>> 0
+function collectEntries(templates) {
+  const entries = new Map()
+  for (const template of templates) {
+    if (!template.imageUrl || !template.thumbnailUrl) continue
+    entries.set(path.basename(template.thumbnailUrl), template.imageUrl)
   }
-  return `t-${hash.toString(16)}-${url.length}.webp`
-}
-
-function collectUrls() {
-  const urls = new Set()
-  for (const relFile of DATA_FILES) {
-    const text = readFileSync(path.join(ROOT, relFile), 'utf-8')
-    // promptTemplateData.ts 里的完整 URL 字面量
-    for (const match of text.matchAll(/["']imageUrl["']:\s*["']([^"']+)["']/g)) {
-      urls.add(match[1])
-    }
-    // kkkm / houshifang 只有 imagePath 相对路径，拼上各自文件里的 IMAGE_BASE_URL 常量
-    const baseMatch = text.match(/IMAGE_BASE_URL\s*=\s*["']([^"']+)["']/)
-    if (baseMatch) {
-      for (const match of text.matchAll(/["']?imagePath["']?:\s*["']([^"']+)["']/g)) {
-        urls.add(`${baseMatch[1]}${match[1].replace(/^\/+/, '')}`)
-      }
-    }
-  }
-  return [...urls].map(normalizeGithubImageUrl)
+  return [...entries].map(([filename, url]) => ({ filename, url }))
 }
 
 // jsdmirror 镜像不稳时回退 raw.githubusercontent.com
@@ -114,9 +79,9 @@ async function mapPool(items, worker) {
   await Promise.all(runners)
 }
 
-const urls = collectUrls()
-if (urls.length === 0) {
-  console.warn('没有从数据文件中提取到任何图片 URL，请检查 DATA_FILES 的正则是否仍然匹配。')
+const entries = collectEntries(await loadTemplates())
+if (entries.length === 0) {
+  console.warn('没有从 BUILT_IN_PROMPT_TEMPLATES 读到任何示例图，请检查模板数据。')
   process.exit(1)
 }
 
@@ -127,10 +92,9 @@ const failures = []
 let downloaded = 0
 let skipped = 0
 
-console.log(`共 ${urls.length} 张原图，输出目录 ${path.relative(ROOT, OUT_DIR)}/`)
+console.log(`共 ${entries.length} 张原图，输出目录 ${path.relative(ROOT, OUT_DIR)}/`)
 
-await mapPool(urls, async (url) => {
-  const filename = thumbFilename(url)
+await mapPool(entries, async ({ filename, url }) => {
   const dest = path.join(OUT_DIR, filename)
   keptFiles.add(filename)
 
@@ -147,7 +111,7 @@ await mapPool(urls, async (url) => {
       .toFile(dest)
     downloaded += 1
   } catch (err) {
-    // 单张失败不致命：运行时该模板会直接加载原图
+    // 单张失败不致命：运行时该模板会先加载缩略图、再回退原图
     failures.push(`${url}\n    ${err.message}`)
   }
 })

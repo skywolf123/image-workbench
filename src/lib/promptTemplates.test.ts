@@ -405,6 +405,19 @@ describe('promptTemplates', () => {
     expect(BUILT_IN_PROMPT_TEMPLATES.length).toBeGreaterThan(0)
   })
 
+  it('ships a local thumbnail for every template image', () => {
+    const shipped = new Set(
+      Object.keys(import.meta.glob('/public/templates/*.webp')).map((file) => file.split('/').pop()),
+    )
+    const missing = BUILT_IN_PROMPT_TEMPLATES.filter((template) => {
+      if (!template.thumbnailUrl) return true
+      return !shipped.has(template.thumbnailUrl.split('/').pop())
+    })
+
+    // 缩略图是列表和大图的降级来源，缺文件会退化成空白；补跑 scripts/generateTemplateThumbs.mjs
+    expect(missing.map((template) => template.id)).toEqual([])
+  })
+
   it('uses Chinese prompt text instead of untranslated foreign prompt blocks', () => {
     for (const template of BUILT_IN_PROMPT_TEMPLATES) {
       expect(chineseCharacterRatio(template.title)).toBeGreaterThan(0.1)

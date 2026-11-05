@@ -472,7 +472,7 @@ function normalizeGithubImageUrl(url?: string) {
   return url
 }
 
-// 缩略图文件名与 scripts/generateTemplateThumbs.mjs 的 thumbFilename 保持一致
+// 缩略图文件由 scripts/generateTemplateThumbs.mjs 按同一哈希生成，脚本直接取 thumbnailUrl，不再另算文件名
 function getTemplateThumbnailHash(url: string) {
   let hash = 0x811c9dc5
   for (let idx = 0; idx < url.length; idx += 1) {

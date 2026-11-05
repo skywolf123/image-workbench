@@ -1,6 +1,6 @@
 [package]
 name = "gpt-image-studio"
-version = "0.8.4-iw02"
+version = "0.8.4-iw03"
 description = "Image Workbench"
 license = "MIT"
 edition = "2021"

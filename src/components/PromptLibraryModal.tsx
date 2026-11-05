@@ -98,6 +98,7 @@ function TemplatePreviewImage({
   sizing = 'fill',
   width,
   height,
+  degradedHint = false,
   onClick,
 }: {
   src?: string
@@ -108,17 +109,27 @@ function TemplatePreviewImage({
   sizing?: 'fill' | 'intrinsic'
   width?: number
   height?: number
+  degradedHint?: boolean
   onClick?: (event: ReactMouseEvent<HTMLImageElement>) => void
 }) {
   const [activeSrc, setActiveSrc] = useState(src)
   const [failed, setFailed] = useState(false)
+  const [degraded, setDegraded] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     setActiveSrc(src)
     setFailed(false)
+    setDegraded(false)
     setRetryCount(0)
   }, [src, fallbackSrc])
+
+  const retry = () => {
+    setRetryCount((count) => count + 1)
+    setFailed(false)
+    setDegraded(false)
+    setActiveSrc(src)
+  }
 
   if (!src) {
     return (
@@ -128,12 +139,8 @@ function TemplatePreviewImage({
     )
   }
 
-  // 加载失败展示占位块，点击后带 cache-buster 重试；外层卡片可聚焦，这里用 div 避免嵌套交互元素
+  // 全部候选图都失败才显示重试占位块
   if (failed) {
-    const retry = () => {
-      setRetryCount((count) => count + 1)
-      setFailed(false)
-    }
     return (
       <div
         role="button"
@@ -160,21 +167,44 @@ function TemplatePreviewImage({
   const imageSrc = retryCount > 0 ? `${displaySrc}${displaySrc.includes('?') ? '&' : '?'}iw-retry=${retryCount}` : displaySrc
 
   return (
-    <img
-      key={imageSrc}
-      src={imageSrc}
-      width={width}
-      height={height}
-      alt={alt ?? ''}
-      loading="lazy"
-      decoding="async"
-      onClick={onClick}
-      onError={() => {
-        if (fallbackSrc && displaySrc !== fallbackSrc) setActiveSrc(fallbackSrc)
-        else setFailed(true)
-      }}
-      className={`block ${sizing === 'fill' ? 'w-full' : 'h-auto max-w-full'} ${fit === 'cover' ? 'object-cover' : 'object-contain'} ${className}`}
-    />
+    <div className={`relative ${sizing === 'fill' ? 'block w-full' : 'inline-block max-w-full'}`}>
+      <img
+        key={imageSrc}
+        src={imageSrc}
+        width={width}
+        height={height}
+        alt={alt ?? ''}
+        loading="lazy"
+        decoding="async"
+        // YouMind 的图床按 Referer 防盗链，非 youmind.com 来源会 403，带上 no-referrer 才可加载
+        referrerPolicy="no-referrer"
+        onClick={onClick}
+        onError={() => {
+          if (fallbackSrc && displaySrc !== fallbackSrc) {
+            setActiveSrc(fallbackSrc)
+            if (degradedHint) setDegraded(true)
+            return
+          }
+          setDegraded(false)
+          setFailed(true)
+        }}
+        className={`block ${sizing === 'fill' ? 'w-full' : 'h-auto max-w-full'} ${fit === 'cover' ? 'object-cover' : 'object-contain'} ${className}`}
+      />
+      {degraded && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            retry()
+          }}
+          className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1.5 rounded-xl bg-zinc-950/72 px-2 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-zinc-950/85"
+          aria-label="原图加载失败，点击重试"
+        >
+          <RefreshIcon className="h-3.5 w-3.5" />
+          原图加载失败，点击重试
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -267,6 +297,8 @@ function TemplateDetailPanel({
         <div className="group relative w-fit max-w-full self-center overflow-hidden rounded-3xl border border-zinc-200/70 bg-zinc-50 shadow-sm transition hover:border-emerald-400/70 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-emerald-300/40">
           <TemplatePreviewImage
             src={template.imageUrl}
+            fallbackSrc={template.thumbnailUrl}
+            degradedHint
             alt={template.imageAlt ?? template.title}
             className={`bg-zinc-100 transition duration-200 group-hover:scale-[1.015] dark:bg-zinc-950 ${
               compact ? 'max-h-[34vh]' : 'max-h-[56vh] sm:max-h-[480px] lg:max-h-[48vh]'
@@ -520,7 +552,7 @@ export default function PromptLibraryModal() {
   const [selectedId, setSelectedId] = useState(BUILT_IN_PROMPT_TEMPLATES[0]?.id ?? '')
   const [mobileDetailId, setMobileDetailId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024)
-  const [zoomImage, setZoomImage] = useState<{ src: string; alt: string } | null>(null)
+  const [zoomImage, setZoomImage] = useState<{ src: string; fallbackSrc?: string; alt: string } | null>(null)
 
   const close = () => {
     setZoomImage(null)
@@ -967,7 +999,7 @@ export default function PromptLibraryModal() {
                 onApply={applyTemplate}
                 onAppend={appendTemplate}
                 onCopy={copyTemplatePrompt}
-                onZoom={(template) => setZoomImage({ src: template.imageUrl!, alt: template.imageAlt ?? template.title })}
+                onZoom={(template) => setZoomImage({ src: template.imageUrl!, fallbackSrc: template.thumbnailUrl, alt: template.imageAlt ?? template.title })}
               />
             ) : (
               <div className="flex min-h-full items-center justify-center p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
@@ -995,7 +1027,7 @@ export default function PromptLibraryModal() {
                   onApply={applyTemplate}
                   onAppend={appendTemplate}
                   onCopy={copyTemplatePrompt}
-                  onZoom={(template) => setZoomImage({ src: template.imageUrl!, alt: template.imageAlt ?? template.title })}
+                  onZoom={(template) => setZoomImage({ src: template.imageUrl!, fallbackSrc: template.thumbnailUrl, alt: template.imageAlt ?? template.title })}
                   onClose={closeMobileDetail}
                 />
               </div>
@@ -1023,6 +1055,8 @@ export default function PromptLibraryModal() {
           </button>
           <TemplatePreviewImage
             src={zoomImage.src}
+            fallbackSrc={zoomImage.fallbackSrc}
+            degradedHint
             alt={zoomImage.alt}
             className="max-h-[90vh] max-w-[94vw] rounded-2xl object-contain shadow-[0_28px_90px_rgba(0,0,0,0.45)]"
             fit="contain"
